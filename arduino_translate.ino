@@ -7,7 +7,6 @@
 #include <Arduino.h>
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 
-
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -56,7 +55,7 @@ void ChangeUTF(int langCodeInt)
 {
   /*
   ko = 1, ja = 2,  en = 0,  es = 3, fr = 4,  de = 5,
-  pt = 6,  it = 7, vi = 8, th = 9, ru = 10,
+  pt = 6,  it = 7, vi = 8, th = 9, ru = 10, 중국 간체 11, 대만 번체 12
   */
  
   switch(langCodeInt)
