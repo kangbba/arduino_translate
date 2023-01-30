@@ -22,10 +22,10 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_unifont_t_korean1);
-  Message("U8G2 START!");
+  Message("U8G2 START!!");
 
   //Initialize Bluetooth
-  SerialBT.begin("ESP32test"); //Bluetooth device name
+  SerialBT.begin("ESP32hyehwa"); //Bluetooth device name
   Serial.println("블루투스 시작됨");
 }
 
