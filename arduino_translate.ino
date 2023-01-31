@@ -13,6 +13,8 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 #endif
 BluetoothSerial SerialBT;
 
+int previousLangCode = -1;
+
 void setup() {
   Serial.begin(115200);
 
@@ -39,14 +41,23 @@ void loop() {
   if (SerialBT.available()) {
     String fullMsg = SerialBT.readString();
     Serial.println(fullMsg);
-    
+
+    //메세지 형식 => 12:Hello World; 
+    //오류시 12:Hello World;12:Hello World;12:Hello World 이런식의 메세지 출력됨.
+    //오류방지로 첫 ; 까지만 먼저 읽기
+    String beforeFullMsg = Split(fullMsg, ';', 0);
+
     /////// 국가코드 READ 후 국가코드에 맞는 폰트를 설정한다 /////// 
-    int langCodeInt = Split(fullMsg, ':', 0).toInt(); 
-    ChangeUTF(langCodeInt);
+    int langCodeInt = Split(beforeFullMsg, ':', 0).toInt(); 
+    if(previousLangCode != langCodeInt)
+    {
+      ChangeUTF(langCodeInt);
+      previousLangCode = langCodeInt;
+    }
 
     /////// 메세지 READ 후 출력한다 ///////
-    String msg = Split(fullMsg, ':', 1);
-    Message(msg);
+    String finalMsg = Split(beforeFullMsg, ':', 1);
+    Message(finalMsg);
   }
   delay(20);
 }
@@ -134,7 +145,7 @@ String Split(String data, char separator, int index)
 int Message(String message){
 
   u8g2.clearDisplay();
-  u8g2.setCursor(0, 32);
+  u8g2.setCursor(0, 16);
   u8g2.print(message);
   u8g2.sendBuffer();
 }
