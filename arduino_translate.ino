@@ -142,7 +142,7 @@ String Split(String data, char separator, int index)
     }
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
-int Message(String message){
+void Message(String message){
 
   u8g2.clearDisplay();
   u8g2.setCursor(0, 16);
