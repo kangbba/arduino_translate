@@ -142,13 +142,26 @@ String Split(String data, char separator, int index)
     }
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
-void Message(String message){
 
-  u8g2.clearDisplay();
-  u8g2.setCursor(0, 16);
-  u8g2.print(message);
+void Message(String msg){
+
+  u8g2.clearBuffer();
+  int lineLength = 15;
+  int len = msg.length();
+  int lines = len / lineLength + 1;
+  int height = 10;
+  for (int i = 0; i < lines; i++) {
+  int end = min((i + 1) * lineLength, len);
+  String line = msg.substring(i * lineLength, end);
+  u8g2.drawStr(0, height, line.c_str());
+  height += 10;
+  }
+
   u8g2.sendBuffer();
 }
+
+
+
 
 
 
