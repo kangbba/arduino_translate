@@ -108,6 +108,8 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
+  Message(0, "Device Started");
+
 }
 
 void initBLEDevice()
@@ -158,7 +160,7 @@ void loop() {
   // do stuff here on connecting
       oldDeviceConnected = deviceConnected;
      
-      Message(0, "Device Started");
+      Message(0, "Device Connected");
   }
 
   bool recentMessageExist = nowCallback != previousCallback;
@@ -245,7 +247,7 @@ void ChangeUTF(int langCodeInt)
       break;
     case 2:
     //일본
-      u8g2.setFont(u8g2_font_b10_t_japanese1);
+      u8g2.setFont(u8g2_font_b10_t_japanese2);
       break;
     case 3:
     //스페인
