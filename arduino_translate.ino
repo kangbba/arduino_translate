@@ -35,7 +35,6 @@
 #include <U8g2lib.h>
 #include <Arduino.h>
 
-
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -110,7 +109,7 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
-   Message(0, "Device Started");
+  Message(0, "Device Started");
 }
 
 void initBLEDevice()
@@ -162,6 +161,7 @@ void loop() {
       oldDeviceConnected = deviceConnected;
      
       Message(0, "Device Connected");
+
   }
 
   bool recentMessageExist = nowCallback != previousCallback;
