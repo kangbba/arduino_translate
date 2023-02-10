@@ -1,5 +1,3 @@
-
-
 // CHARACTERISTIC_UUID_TX를 통해 데이터를 보내야 합니다.
 
 /*
@@ -48,7 +46,11 @@
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+
+//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
+
+
 
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "beb5483e-36e1-4688-b7f5-ea07361b26a8" // 
@@ -108,8 +110,7 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
-  Message(0, "Device Started");
-
+   Message(0, "Device Started");
 }
 
 void initBLEDevice()
@@ -202,88 +203,96 @@ void Message(int langCode, String msg)
     ChangeUTF(langCode);
     u8g2.print(msg);
     u8g2.sendBuffer();
-
 }
-// void Message(String msg){
-
-
-//   //   u8g2.clearBuffer();
-//   //   u8g2.setCursor(0, 10);
-//   u8g2.clearBuffer();
-//   int lineLength = 15;
-//   int len = msg.length();
-//   int lines = len / lineLength + 1;
-//   int height = 10;
-//   for (int i = 0; i < lines; i++) 
-//   {
-//     int end = min((i + 1) * lineLength, len);
-//     String line = msg.substring(i * lineLength, end);
-//     u8g2.drawStr(0, height, line.c_str());
-//     height += 10;
-//   }
-
-//   u8g2.sendBuffer();
-// }
 void ChangeUTF(int langCodeInt)
 {
-  /*
-  ko = 1, ja = 2,  en = 0,  es = 3, fr = 4,  de = 5,
-  pt = 6,  it = 7, vi = 8, th = 9, ru = 10, 중국 간체 11, 대만 번체 12
-  */
- 
-  switch(langCodeInt)
-  {
-    default: 
-    // 기본값
-      u8g2.setFont(u8g2_font_unifont_t_korean1); 
-      break;
+  switch (langCodeInt) {
+    default:
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        break;
     case 0:
-    //영어 
-      u8g2.setFont(u8g2_font_unifont_t_korean1); 
-      break;
-    case 1:
-    //한국 
-      u8g2.setFont(u8g2_font_unifont_t_korean1); 
-      break;
-    case 2:
-    //일본
-      u8g2.setFont(u8g2_font_b10_t_japanese2);
-      break;
-    case 3:
-    //스페인
-      break;
-    case 4:
-    //프랑스
-      break;
-    case 5: 
-    // 독일
-  //    u8g2.setFont(u8g2_font_unifont_t_deutsche);
-      break;
-    case 6: 
-    // 포르투갈
-  //    u8g2.setFont(u8g2_font_unifont_t_Portugiesisch1);
-      break;
-    case 7: 
-    // 이탈리아
-      break;
-    case 8: 
-    // 베트남
-      u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
-      break;
-    case 9: 
-    // 태국
-      u8g2.setFont(u8g2_font_etl14thai_t); 
-      break;
-    case 10: 
-    // 러시아
-      break;
-    case 11: 
-      u8g2.setFont(u8g2_font_unifont_t_chinese2);
-    // 중국(간체)
-      break;
-    case 12: 
-      u8g2.setFont(u8g2_font_unifont_t_chinese2);
-    // 대만(번체)
-      break;
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        break;
+    case 1: // English
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        break;
+    case 2: // Spanish
+        u8g2.setFont(u8g2_font_7x14_tf); 
+        break;
+    case 3: // French
+        u8g2.setFont(u8g2_font_7x14_tf);   
+        break;
+    case 4: // German
+        u8g2.setFont(u8g2_font_7x14_tf); 
+        break;
+    case 5: // Chinese
+ //       u8g2.setFont(u8g2_font_wqy16_t_gb2312);
+        break;
+    case 6: // Arabic
+        u8g2.setFont(u8g2_font_unifont_t_arabic);
+        break;
+    case 7: // Russian
+        u8g2.setFont(u8g2_font_unifont_t_cyrillic); 
+        break;
+    case 8: // Portuguese
+        u8g2.setFont(u8g2_font_7x14_tf); 
+        break;
+    case 9: // Italian
+        u8g2.setFont(u8g2_font_7x14_tf); 
+        break;
+    case 10: // Japanese
+        u8g2.setFont(u8g2_font_b16_t_japanese2);
+        break;
+    case 11: // Dutch
+        break;
+    case 12: // Korean
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        break;
+    case 13: // Swedish
+        break;
+    case 14: // Turkish
+        break;
+    case 15: // Polish
+        u8g2.setFont(u8g2_font_unifont_t_polish);
+        break;
+    case 16: // Danish
+        break;
+    case 17: // Norwegian
+        break;
+    case 18: // Finnish
+        break;
+    case 19: // Czech
+        break;
+    case 20: // Thai
+        u8g2.setFont(u8g2_font_etl14thai_t); 
+        break;
+    case 21: // Greek
+        u8g2.setFont(u8g2_font_unifont_t_greek); 
+        break;
+    case 22: // Hungarian
+        break;
+    case 23: // Hebrew
+        break;
+    case 24: // Romanian
+        break;
+    case 25: // Ukrainian
+        break;
+    case 26: // Vietnamese
+        u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
+        break;
+    case 27: // Icelandic
+        break;
+    case 28: // Bulgarian
+        break;
+    case 29: // Lithuanian
+        break;
+    case 30: // Latvian
+        break;
+    case 31: // Slovenian
+        break;
+    case 32: // Croatian
+        break;
+    case 33: // Estonian
+        break;
   }
 }
