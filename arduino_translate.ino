@@ -28,6 +28,7 @@
 // #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
 // #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
 
+
 #include "BluetoothSerial.h"
 #include <SPI.h>
 #include <Wire.h>
@@ -100,7 +101,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(19200);
   // Create the BLE Device
   initBLEDevice();
   //Initialize U8G2 
@@ -196,37 +197,71 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   langCode = input.substring(0, separatorIndex).toInt();
   someMsg = input.substring(separatorIndex + 1, input.indexOf(";"));
 }
+
+int deviceWidth = 128 - 10;
+int fontHeight = 16;
+int charWidth = 16;
 void Message(int langCode, String msg)
 {
     u8g2.clearBuffer();
-    u8g2.setCursor(0, 15);
     ChangeUTF(langCode);
-    u8g2.print(msg);
+
+    int padding = 0;
+    int cursorX = 0;
+
+    u8g2.setCursor(padding, 15);
+    for (int i = 0; i < msg.length(); i++) {
+      char currentChar = msg.charAt(i);
+
+      String charString(currentChar);
+      ChangeFontSize(langCode, charString);
+     // int charWidth = u8g2.getUTF8Width(charString.c_str());
+      if (cursorX + charWidth > deviceWidth ) {
+          if (currentChar == ' ') continue;  // 공백이면 출력 생략
+          cursorX = padding;
+          u8g2.setCursor(cursorX, u8g2.getCursorY() + fontHeight);
+      }
+      u8g2.print(currentChar);
+      cursorX += charWidth;
+    }
     u8g2.sendBuffer();
 }
+
+void ChangeFontSize(int langCode, String charString)
+{
+  switch(langCode)
+  {
+    default:
+      charWidth = u8g2.getUTF8Width(charString.c_str());
+      fontHeight = u8g2.getMaxCharHeight();
+      break;
+    case 12: // Korean
+      charWidth = 16;
+      fontHeight = 16;
+    case 5: // Chinese
+      charWidth = 4;
+      fontHeight = 16;
+      break;    
+  }
+}
+
 void ChangeUTF(int langCodeInt)
 {
   switch (langCodeInt) {
-    default:
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
-        break;
-    case 0:
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
-        break;
     case 1: // English
         u8g2.setFont(u8g2_font_unifont_t_korean2);
         break;
     case 2: // Spanish
-        u8g2.setFont(u8g2_font_7x14_tf); 
+        u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 3: // French
-        u8g2.setFont(u8g2_font_7x14_tf);   
+        u8g2.setFont(u8g2_font_8x13_tr);   
         break;
     case 4: // German
-        u8g2.setFont(u8g2_font_7x14_tf); 
+        u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 5: // Chinese
- //       u8g2.setFont(u8g2_font_wqy16_t_gb2312);
+        u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
         u8g2.setFont(u8g2_font_unifont_t_arabic);
@@ -235,10 +270,10 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(u8g2_font_unifont_t_cyrillic); 
         break;
     case 8: // Portuguese
-        u8g2.setFont(u8g2_font_7x14_tf); 
+        u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 9: // Italian
-        u8g2.setFont(u8g2_font_7x14_tf); 
+        u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 10: // Japanese
         u8g2.setFont(u8g2_font_b16_t_japanese2);
@@ -246,7 +281,7 @@ void ChangeUTF(int langCodeInt)
     case 11: // Dutch
         break;
     case 12: // Korean
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        u8g2.setFont(u8g2_font_unifont_t_korean1);
         break;
     case 13: // Swedish
         break;
@@ -293,6 +328,9 @@ void ChangeUTF(int langCodeInt)
     case 32: // Croatian
         break;
     case 33: // Estonian
+        break;
+    default:
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
         break;
   }
 }
