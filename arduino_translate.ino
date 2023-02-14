@@ -41,6 +41,8 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+
+
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -68,11 +70,18 @@ int nowCallback = 0;
 int previousCallback = 0;
 
 int deviceWidth = 128;
-int scrollOffset = 0;
 
 int maxCursorY = 0;
-unsigned long scrollStartTime = 0;
+int currentCursorY = 0;
 
+int gapWithTextLines = 16;
+int charCountPerLine = 12;
+
+
+//doing scroll
+unsigned long scrollStartTime = 0;
+unsigned long accumTimeForScroll = 0;
+long previousMillis = 0;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -148,7 +157,14 @@ void initBLEDevice()
   pServer->getAdvertising()->start();
   Serial.println("Waiting a client connection to notify...");
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
+
 void loop() {
+
+  unsigned long currentMillis = millis();
+  unsigned long deltaTime = currentMillis - previousMillis;
+  
   if (deviceConnected) {
       pTxCharacteristic->setValue(&txValue, 1);
       pTxCharacteristic->notify();
@@ -173,7 +189,11 @@ void loop() {
   bool recentMessageExist = nowCallback != previousCallback;
   if(recentMessageExist)
   {
-    scrollOffset = 0;
+    currentCursorY = 0;
+    maxCursorY = 0;
+    previousCallback = nowCallback;
+
+    accumTimeForScroll = 0;
   }
 
    if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
@@ -188,8 +208,8 @@ void loop() {
     // Serial.print("someMsg ");
     // Serial.print(someMsg);
     // Serial.println();
-    Serial.print("someMsg : ");
-    Serial.println(someMsg);
+    // Serial.print("someMsg : ");
+    // Serial.println(someMsg);
     someMsg.trim();
     Message(langCode, someMsg, true);
   } 
@@ -197,144 +217,142 @@ void loop() {
   {
     Serial.println("Invalid input format. It should be in the format 'langcode:someMsg;'");
   }
-
+  if (accumTimeForScroll >= 2000)
+     scrollWithInterval(100);
+  else{
+    accumTimeForScroll += deltaTime;
+  }
+  previousMillis = currentMillis;
+}
+void scrollWithInterval(long interval)
+{
   unsigned long currentMillis = millis();
 
-  // Increase scrollOffset for 2 seconds
-  int standardFontHeight = 16; // 수정금지;
-  int maxLineCount = 4; // 수정가능
-  if (maxCursorY > standardFontHeight * maxLineCount) {
-    if(scrollOffset > -1 * (maxCursorY - standardFontHeight * maxLineCount ))
-    {
-      scrollOffset -= 1;
+  // check if it's time to scroll
+  if (currentMillis - scrollStartTime >= interval) {
+    // do scrolling here
+    int maxLineCount = 4; // 수정가능
+    int onePageHeight = gapWithTextLines * maxLineCount;
+    if (maxCursorY >= onePageHeight && currentCursorY < (maxCursorY - onePageHeight)) {
+      currentCursorY ++;
     }
-    delay(5);
+    else {
+      // reset scrollStartTime to currentMillis so the next scroll interval starts from now
+      scrollStartTime = currentMillis;
+    }
   }
-  else{
-    delay(10);
-  }
+  
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
+
 void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   int separatorIndex = input.indexOf(":");
   langCode = input.substring(0, separatorIndex).toInt();
   someMsg = input.substring(separatorIndex + 1, input.indexOf(";"));
 }
 
-void Message(int langCode, String msg, bool useScroll)
+void Message(int langCode, String str, bool useScroll)
 {
-    u8g2.clearBuffer();
-    ChangeUTF(langCode);
+ // u8g2.drawHLine(0, 4 - currentCursorY, deviceWidth);
 
-    int padding = 8;
-    int cursorX = 0;
-    int lineHeight = 16;
-    int lineCount = 1;
-    int scrollOffsetToUse = useScroll ? scrollOffset : 0;
+  ChangeUTF(langCode);
+  u8g2.setFlipMode(0);
 
-    bool isNextLine = false;
+  // str을 String 객체로 변환
+  String str_obj = String(str);
 
+  // 한 줄당 출력할 문자 수
+  int line_len = charCountPerLine;
 
-    int charCount = strlen(msg.c_str()); // 문자열의 길이를 문자 개수로 계산
+  // 출력 위치 초기화
+  int initialHeight = 5;
 
-    Serial.print("Message length: ");
-    Serial.print(charCount);
-    Serial.println(" ");
-    for (int i = 0; i < charCount; i++) {
-
-      char currentChar = msg.charAt(i);
-      // String charString(currentChar);
-      int charWidth = getCharWidth(langCode, currentChar);
-      // int lineSpacing = getLineSpacing(langCode);
-      Serial.print("CursorX: ");
-      Serial.print(cursorX);
-      Serial.println(" ");
-
-      u8g2.setCursor(cursorX, lineCount * lineHeight + scrollOffsetToUse);
-      if((currentChar == ' ') && isNextLine) {
-        //줄이 바뀌었고 공백이면 무시.
-      }
-      else{
-        u8g2.print(currentChar);
-        int nextCursorX = cursorX + charWidth;
-        if(nextCursorX > deviceWidth - padding){
-          cursorX = 0;
-          lineCount++;
-          isNextLine = true;
-        }
-        else{
-          cursorX = nextCursorX;
-          isNextLine = false;
-        }
-      }
-    }
-    maxCursorY = lineCount * lineHeight;
-
-    u8g2.sendBuffer();
-}
-
-int getCharWidth(int langCode, char c)
-{
-  const char str[] = { c, '\0' };
-  if(c >= 33 && c <= 47) // 특수문자인 경우
-  {
-    return u8g2.getUTF8Width(str);
+  int height = initialHeight + gapWithTextLines;
+  u8g2_uint_t x = 0, y = height;
+  
+  // 문자열을 일정 길이 단위로 나누어 출력
+  for (int i = 0; i < str_obj.length(); i += line_len) {
+    // 출력할 문자열 추출
+    String line = str_obj.substring(i, i + line_len);
+    
+    // UTF-8 문자열을 출력
+    u8g2.drawUTF8(x, y - currentCursorY, line.c_str());
+    
+    // 출력 위치를 다음 줄로 이동
+    y += gapWithTextLines;
   }
-  switch(langCode)
-  {
-    default:
-      return u8g2.getUTF8Width(str);
-    case 12: // Korean
-      return 16;
-    case 10: // Japanese
-      return 16;
-  }
-}
+  maxCursorY = y;
 
+  u8g2.sendBuffer();
+  u8g2.clearBuffer(); // 버퍼 초기화
+
+}
 void ChangeUTF(int langCodeInt)
 {
+  charCountPerLine = 12; // 이것은 기본값이므로 여기서 수정하지말고 아래에서 나라별로 수정하세요.
+
+//charCountPerLine는 화면에 표시되는 한줄에 몇개의 글자를 표시할지를 정하는 변수임
+//charCountPerLine를 자동으로 계산하고 싶지만 폰트가 다양하고 그 정보가 누락된 경우가많아서 직접지정해줘야 한다.
+//화면에 글자가 다 안 담길경우 아래의 charCountPerLine 값을 줄여서 한줄당 표시될 글자수를 줄여주셈.
+//화면은 넉넉한데 글자가 몇자 쓰지도않고 줄을바꾸면 charCountPerLine 값을 늘려서 한줄당 표시될 글자수를 늘려주셈.
+
   switch (langCodeInt) {
     case 1: // English
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_unifont_t_korean2);
         break;
     case 2: // Spanish
+        charCountPerLine = 13;
         u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 3: // French
+        charCountPerLine = 13;
         u8g2.setFont(u8g2_font_8x13_tr);   
         break;
     case 4: // German
+        charCountPerLine = 13;
         u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 5: // Chinese
-        // u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
-        u8g2.setFont(u8g2_font_unifont_t_chinese3);
-
+        charCountPerLine = 27;
+        u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_unifont_t_arabic);
         break;
     case 7: // Russian
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_unifont_t_cyrillic); 
         break;
     case 8: // Portuguese
+        charCountPerLine = 13;
         u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 9: // Italian
+        charCountPerLine = 13;
         u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 10: // Japanese
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_b16_t_japanese2);
         break;
     case 11: // Dutch
+        charCountPerLine = 14;
         break;
     case 12: // Korean
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_unifont_t_korean1);
         break;
     case 13: // Swedish
+        charCountPerLine = 14;
         break;
     case 14: // Turkish
+        charCountPerLine = 14;
         break;
     case 15: // Polish
+        charCountPerLine = 14;
         u8g2.setFont(u8g2_font_unifont_t_polish);
         break;
     case 16: // Danish
