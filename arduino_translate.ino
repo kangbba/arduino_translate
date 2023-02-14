@@ -67,6 +67,13 @@ String recentMessage = "";
 int nowCallback = 0;
 int previousCallback = 0;
 
+int deviceWidth = 128;
+int scrollOffset = 0;
+
+int maxCursorY = 0;
+unsigned long scrollStartTime = 0;
+
+
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
@@ -110,7 +117,7 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
-  Message(0, "Device Started");
+  Message(0, "Device Started", false);
 }
 
 void initBLEDevice()
@@ -160,37 +167,49 @@ void loop() {
   if (deviceConnected && !oldDeviceConnected) {
   // do stuff here on connecting
       oldDeviceConnected = deviceConnected;
-     
-      Message(0, "Device Connected");
-
+      Message(0, "Device Connected", false);
   }
 
   bool recentMessageExist = nowCallback != previousCallback;
   if(recentMessageExist)
   {
-    if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
-    {
-      previousCallback = nowCallback;
-      int langCode;
-      String someMsg;
-      parseLangCodeAndMessage(recentMessage, langCode, someMsg);
-      Serial.print("langCode ");
-      Serial.print(langCode);
-      Serial.println();
-      Serial.print("someMsg ");
-      Serial.print(someMsg);
-      Serial.println();
-      Message(langCode, someMsg);
-    //  
-    //  delay(100);
-  //    
-    } 
-    else 
-    {
-      Serial.println("Invalid input format. It should be in the format 'langcode:someMsg;'");
-    }
+    scrollOffset = 0;
   }
-  delay(10);
+
+   if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
+  {
+    previousCallback = nowCallback;
+    int langCode;
+    String someMsg;
+    parseLangCodeAndMessage(recentMessage, langCode, someMsg);
+    // Serial.print("langCode ");
+    // Serial.print(langCode);
+    // Serial.println();
+    // Serial.print("someMsg ");
+    // Serial.print(someMsg);
+    // Serial.println();
+    Message(langCode, someMsg, true);
+  } 
+  else 
+  {
+    Serial.println("Invalid input format. It should be in the format 'langcode:someMsg;'");
+  }
+
+  unsigned long currentMillis = millis();
+
+  // Increase scrollOffset for 2 seconds
+  int standardFontHeight = 16; // 수정금지;
+  int maxLineCount = 4; // 수정가능
+  if (maxCursorY > standardFontHeight * maxLineCount) {
+    if(scrollOffset > -1 * (maxCursorY - standardFontHeight * maxLineCount ))
+    {
+      scrollOffset -= 1;
+    }
+    delay(5);
+  }
+  else{
+    delay(10);
+  }
 }
 void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   int separatorIndex = input.indexOf(":");
@@ -198,50 +217,89 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   someMsg = input.substring(separatorIndex + 1, input.indexOf(";"));
 }
 
-int deviceWidth = 128 - 10;
-int fontHeight = 16;
-int charWidth = 16;
-void Message(int langCode, String msg)
+void Message(int langCode, String msg, bool useScroll)
 {
     u8g2.clearBuffer();
     ChangeUTF(langCode);
 
-    int padding = 0;
+    int padding = 8;
     int cursorX = 0;
+    int lineHeight = 16;
+    int lineCount = 1;
+    int scrollOffsetToUse = useScroll ? scrollOffset : 0;
 
-    u8g2.setCursor(padding, 15);
+    bool isNextLine = false;
+
+    Serial.print("Message length: ");
+    Serial.print(msg.length());
+    Serial.println(" ");
+
     for (int i = 0; i < msg.length(); i++) {
-      char currentChar = msg.charAt(i);
 
-      String charString(currentChar);
-      ChangeFontSize(langCode, charString);
-     // int charWidth = u8g2.getUTF8Width(charString.c_str());
-      if (cursorX + charWidth > deviceWidth ) {
-          if (currentChar == ' ') continue;  // 공백이면 출력 생략
-          cursorX = padding;
-          u8g2.setCursor(cursorX, u8g2.getCursorY() + fontHeight);
+      char currentChar = msg.charAt(i);
+      // String charString(currentChar);
+      int charWidth = getCharWidth(langCode, currentChar);
+      // int lineSpacing = getLineSpacing(langCode);
+      int oneCharSize = getOneCharSize(langCode);
+      Serial.print("CursorX: ");
+      Serial.print(cursorX);
+      Serial.println(" ");
+
+      u8g2.setCursor(cursorX, lineCount * lineHeight + scrollOffsetToUse);
+      if((currentChar == ' ') && isNextLine) {
+        //줄이 바뀌었고 공백이면 무시.
       }
-      u8g2.print(currentChar);
-      cursorX += charWidth;
+      else{
+        u8g2.print(currentChar);
+        int nextCursorX = cursorX + charWidth / oneCharSize;
+        if(nextCursorX > deviceWidth - padding){
+          cursorX = 0;
+          lineCount++;
+          isNextLine = true;
+        }
+        else{
+          cursorX = nextCursorX;
+          isNextLine = false;
+        }
+      }
     }
+    maxCursorY = lineCount * lineHeight;
+
     u8g2.sendBuffer();
 }
 
-void ChangeFontSize(int langCode, String charString)
+int getCharWidth(int langCode, char c)
+{
+  const char str[] = { c, '\0' };
+  if(c >= 33 && c <= 47) // 특수문자인 경우
+  {
+    return u8g2.getUTF8Width(str);
+  }
+  switch(langCode)
+  {
+    default:
+      return u8g2.getUTF8Width(str);
+    case 12: // Korean
+      return 16;
+    case 10: // Japanese
+      return 16;
+    case 5: // Chinese
+      return 8;
+  }
+}
+
+int getOneCharSize(int langCode)
 {
   switch(langCode)
   {
     default:
-      charWidth = u8g2.getUTF8Width(charString.c_str());
-      fontHeight = u8g2.getMaxCharHeight();
-      break;
+      return 1;
     case 12: // Korean
-      charWidth = 16;
-      fontHeight = 16;
+      return 1;
+    case 10: // Japanese
+      return 1;
     case 5: // Chinese
-      charWidth = 4;
-      fontHeight = 16;
-      break;    
+      return 3;
   }
 }
 
