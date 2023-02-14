@@ -188,6 +188,9 @@ void loop() {
     // Serial.print("someMsg ");
     // Serial.print(someMsg);
     // Serial.println();
+    Serial.print("someMsg : ");
+    Serial.println(someMsg);
+    someMsg.trim();
     Message(langCode, someMsg, true);
   } 
   else 
@@ -230,11 +233,13 @@ void Message(int langCode, String msg, bool useScroll)
 
     bool isNextLine = false;
 
-    Serial.print("Message length: ");
-    Serial.print(msg.length());
-    Serial.println(" ");
 
-    for (int i = 0; i < msg.length(); i++) {
+    int charCount = strlen(msg.c_str()); // 문자열의 길이를 문자 개수로 계산
+
+    Serial.print("Message length: ");
+    Serial.print(charCount);
+    Serial.println(" ");
+    for (int i = 0; i < charCount; i++) {
 
       char currentChar = msg.charAt(i);
       // String charString(currentChar);
@@ -251,7 +256,7 @@ void Message(int langCode, String msg, bool useScroll)
       }
       else{
         u8g2.print(currentChar);
-        int nextCursorX = cursorX + charWidth / oneCharSize;
+        int nextCursorX = cursorX + charWidth;
         if(nextCursorX > deviceWidth - padding){
           cursorX = 0;
           lineCount++;
@@ -284,7 +289,7 @@ int getCharWidth(int langCode, char c)
     case 10: // Japanese
       return 16;
     case 5: // Chinese
-      return 8;
+      return 16;
   }
 }
 
