@@ -245,7 +245,6 @@ void Message(int langCode, String msg, bool useScroll)
       // String charString(currentChar);
       int charWidth = getCharWidth(langCode, currentChar);
       // int lineSpacing = getLineSpacing(langCode);
-      int oneCharSize = getOneCharSize(langCode);
       Serial.print("CursorX: ");
       Serial.print(cursorX);
       Serial.println(" ");
@@ -288,23 +287,6 @@ int getCharWidth(int langCode, char c)
       return 16;
     case 10: // Japanese
       return 16;
-    case 5: // Chinese
-      return 16;
-  }
-}
-
-int getOneCharSize(int langCode)
-{
-  switch(langCode)
-  {
-    default:
-      return 1;
-    case 12: // Korean
-      return 1;
-    case 10: // Japanese
-      return 1;
-    case 5: // Chinese
-      return 3;
   }
 }
 
@@ -324,7 +306,9 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(u8g2_font_8x13_tr); 
         break;
     case 5: // Chinese
-        u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
+        // u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
+        u8g2.setFont(u8g2_font_unifont_t_chinese3);
+
         break;
     case 6: // Arabic
         u8g2.setFont(u8g2_font_unifont_t_arabic);
@@ -397,3 +381,35 @@ void ChangeUTF(int langCodeInt)
         break;
   }
 }
+
+
+// u8g2_font_wqy12_t_chinese1	411	9,491
+// u8g2_font_wqy12_t_chinese2	574	13,701
+// u8g2_font_wqy12_t_chinese3	993	25,038
+// u8g2_font_wqy12_t_gb2312a	4041	111,359
+// u8g2_font_wqy12_t_gb2312b	4531	120,375
+// u8g2_font_wqy12_t_gb2312	7539	208,228
+// u8g2_font_wqy13_t_chinese1	411	10,341
+// u8g2_font_wqy13_t_chinese2	574	14,931
+// u8g2_font_wqy13_t_chinese3	993	27,370
+// u8g2_font_wqy13_t_gb2312a	4041	121,327
+// u8g2_font_wqy13_t_gb2312b	4531	130,945
+// u8g2_font_wqy13_t_gb2312	7539	227,383
+// u8g2_font_wqy14_t_chinese1	411	11,368
+// u8g2_font_wqy14_t_chinese2	574	16,443
+// u8g2_font_wqy14_t_chinese3	993	30,200
+// u8g2_font_wqy14_t_gb2312a	4040	133,898
+// u8g2_font_wqy14_t_gb2312b	4530	143,477
+// u8g2_font_wqy14_t_gb2312	7538	251,515
+// u8g2_font_wqy15_t_chinese1	411	12,590
+// u8g2_font_wqy15_t_chinese2	574	18,133
+// u8g2_font_wqy15_t_chinese3	993	33,165
+// u8g2_font_wqy15_t_gb2312a	4041	147,563
+// u8g2_font_wqy15_t_gb2312b	4531	158,713
+// u8g2_font_wqy15_t_gb2312	7539	276,938
+// u8g2_font_wqy16_t_chinese1	411	14,229
+// u8g2_font_wqy16_t_chinese2	574	20,245
+// u8g2_font_wqy16_t_chinese3	993	37,454
+// u8g2_font_wqy16_t_gb2312a	4041	169,286
+// u8g2_font_wqy16_t_gb2312b	4531	182,271
+// u8g2_font_wqy16_t_gb2312	7539	318,090
