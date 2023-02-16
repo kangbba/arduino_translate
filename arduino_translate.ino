@@ -28,6 +28,9 @@
 // #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
 // #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
 
+
+
+
 #include "BluetoothSerial.h"
 #include <SPI.h>
 #include <Wire.h>
@@ -40,7 +43,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-
+#include "u8g2_font_unifont_t_korean_NanumGothicCoding_16.h"
 
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -383,10 +386,9 @@ void ChangeUTF(int langCodeInt)
     case 12: // Korean
         charCountPerLine = 12;
         // u8g2.setFont(u8g2_font_myfont_tf);
-      //  u8g2.setFont(u8g2_font_unifont_t_korean_NanumGothicCoding_16);
+        u8g2.setFont(u8g2_font_unifont_t_korean_NanumGothicCoding_16);
         // u8g2.setFontMode(1);
         // u8g2.setFont(reinterpret_cast<const uint8_t*>("NanumSquareRoundR.bdf"));
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
         break;
     case 13: // Swedish å 
         charCountPerLine = CHARCOUNT_EUROPE;
