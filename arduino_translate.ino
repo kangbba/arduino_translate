@@ -28,7 +28,6 @@
 // #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
 // #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
 
-
 #include "BluetoothSerial.h"
 #include <SPI.h>
 #include <Wire.h>
@@ -49,6 +48,7 @@
 #endif
 
 
+//U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
 
@@ -57,6 +57,7 @@ U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* 
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "beb5483e-36e1-4688-b7f5-ea07361b26a8" // 
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a9" // 
+
 
 
 BLEServer *pServer = NULL;
@@ -74,7 +75,7 @@ int deviceWidth = 128;
 int maxCursorY = 0;
 int currentCursorY = 0;
 
-int gapWithTextLines = 16;
+int gapWithTextLines = 20;
 int charCountPerLine = 12;
 
 
@@ -252,11 +253,19 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   someMsg = input.substring(separatorIndex + 1, input.indexOf(";"));
 }
 
+// void Message(int langCode, String str, bool useScroll)
+// {
+//   u8g2.setCursor(8,8);
+//   u8g2.setFont(u8g2_font_unifont_t_korean2);
+//   u8g2.print("안녕하세요");
+// }
+
 void Message(int langCode, String str, bool useScroll)
 {
  // u8g2.drawHLine(0, 4 - currentCursorY, deviceWidth);
 
   ChangeUTF(langCode);
+  // u8g2.setFontMode(1);
   u8g2.setFlipMode(0);
 
   // str을 String 객체로 변환
@@ -278,7 +287,6 @@ void Message(int langCode, String str, bool useScroll)
     
     // UTF-8 문자열을 출력
     u8g2.drawUTF8(x, y - currentCursorY, line.c_str());
-    
     // 출력 위치를 다음 줄로 이동
     y += gapWithTextLines;
   }
@@ -290,7 +298,37 @@ void Message(int langCode, String str, bool useScroll)
 }
 void ChangeUTF(int langCodeInt)
 {
-  charCountPerLine = 12; // 이것은 기본값이므로 여기서 수정하지말고 아래에서 나라별로 수정하세요.
+  int CHARCOUNT_STANDARD = 15;
+  int CHARCOUNT_CHINA = 27;
+  int CHARCOUNT_EUROPE = 18;
+  int CHARCOUNT_RUSSIA = 27;
+
+
+  charCountPerLine = CHARCOUNT_STANDARD; // 이것은 기본값이므로 여기서 수정하지말고 아래에서 나라별로 수정하세요.
+
+  const uint8_t *FONT_ENGLISH = u8g2_font_unifont_t_korean2; 
+  const uint8_t *FONT_KOREA = u8g2_font_unifont_t_korean2; 
+  const uint8_t *FONT_STANDARD = u8g2_font_unifont_t_symbols; 
+  const uint8_t *FONT_EUROPE = u8g2_font_7x14_tf; 
+  const uint8_t *FONT_CHINA = u8g2_font_wqy14_t_gb2312a; 
+  const uint8_t *FONT_JAPAN = u8g2_font_unifont_t_japanese1; 
+  const uint8_t *FONT_RUSSIA = u8g2_font_cu12_t_cyrillic; 
+
+// best u8g2_font_unifont_t_cyrillic
+// u8g2_font_crox3h_tr x
+// u8g2_font_9x15_t_cyrillic o (일부생략)
+// u8g2_font_10x20_t_cyrillic
+// u8g2_font_unifont_t_cyrillic o
+// u8g2_font_fub25_tu x 
+
+//best u8g2_font_t0_13b_tf
+//후보  u8g2_font_helvR12_tr u8g2_font_helvR10_tf 뭔가 안깔끔 u8g2_font_profont12_tf u8g2_font_4x6_mr u8g2_font_t0_14b_tf 
+//europe u8g2_font_helvR14_tr u8g2_font_fub11_tf너무 굵음u8g2_font_helvR14_tf u8g2_font_ncenB14_tr
+
+//best : u8g2_font_f16_t_japanese2
+//u8g2_font_k14_t_japanese1, u8g2_font_k14_t_japanese2
+//일본어 u8g2_font_wqy15_t_gb2312 u8g2_font_wqy13_t_gb2312 u8g2_font_wqy14_t_gb2312한자짤림 
+//u8g2_font_wqy15_t_gb2312 u8g2_font_wqy16_t_gb2312양호 한자좀짤림 
 
 //charCountPerLine는 화면에 표시되는 한줄에 몇개의 글자를 표시할지를 정하는 변수임
 //charCountPerLine를 자동으로 계산하고 싶지만 폰트가 다양하고 그 정보가 누락된 경우가많아서 직접지정해줘야 한다.
@@ -300,134 +338,198 @@ void ChangeUTF(int langCodeInt)
   switch (langCodeInt) {
     case 1: // English
         charCountPerLine = 14;
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        u8g2.setFont(FONT_ENGLISH);
         break;
     case 2: // Spanish
-        charCountPerLine = 13;
-        u8g2.setFont(u8g2_font_8x13_tr); 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 3: // French
-        charCountPerLine = 13;
-        u8g2.setFont(u8g2_font_8x13_tr);   
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 4: // German
-        charCountPerLine = 13;
-        u8g2.setFont(u8g2_font_8x13_tr); 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 5: // Chinese
-        charCountPerLine = 27;
-        u8g2.setFont(u8g2_font_wqy14_t_gb2312a); //중국어 4040자 133,898바이트
+        charCountPerLine = CHARCOUNT_CHINA;
+       // u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
-        charCountPerLine = 14;
+        charCountPerLine = 26;
         u8g2.setFont(u8g2_font_unifont_t_arabic);
         break;
     case 7: // Russian
-        charCountPerLine = 14;
-        u8g2.setFont(u8g2_font_unifont_t_cyrillic); 
+        charCountPerLine = CHARCOUNT_RUSSIA;
+        u8g2.setFont(FONT_RUSSIA); 
         break;
     case 8: // Portuguese
-        charCountPerLine = 13;
-        u8g2.setFont(u8g2_font_8x13_tr); 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 9: // Italian
-        charCountPerLine = 13;
-        u8g2.setFont(u8g2_font_8x13_tr); 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 10: // Japanese
-        charCountPerLine = 14;
-        u8g2.setFont(u8g2_font_b16_t_japanese2);
+        charCountPerLine = 21;
+        u8g2.setFont(FONT_JAPAN);
         break;
     case 11: // Dutch
-        charCountPerLine = 14;
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 12: // Korean
-        charCountPerLine = 14;
-        u8g2.setFont(u8g2_font_unifont_t_korean1);
+        charCountPerLine = 12;
+        // u8g2.setFont(u8g2_font_myfont_tf);
+      //  u8g2.setFont(u8g2_font_unifont_t_korean_NanumGothicCoding_16);
+        // u8g2.setFontMode(1);
+        // u8g2.setFont(reinterpret_cast<const uint8_t*>("NanumSquareRoundR.bdf"));
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
         break;
-    case 13: // Swedish
-        charCountPerLine = 14;
+    case 13: // Swedish å 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 14: // Turkish
-        charCountPerLine = 14;
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 15: // Polish
-        charCountPerLine = 14;
-        u8g2.setFont(u8g2_font_unifont_t_polish);
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
-    case 16: // Danish
+    case 16: // Danish å 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
-    case 17: // Norwegian
+    case 17: // Norwegian å 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 18: // Finnish
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 19: // Czech
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 20: // Thai
-        u8g2.setFont(u8g2_font_etl14thai_t); 
+        charCountPerLine = 45;
+        u8g2.setFont(u8g2_font_etl14thai_t);
+        //u8g2_font_etl14thai_t
+        //u8g2_font_ncenB08_tr
+        //u8g2_font_ncenB14_tr 
         break;
     case 21: // Greek
-        u8g2.setFont(u8g2_font_unifont_t_greek); 
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 22: // Hungarian
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 23: // Hebrew
+        charCountPerLine = 20;
+        u8g2.setFont(u8g2_font_cu12_t_hebrew); 
         break;
     case 24: // Romanian
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 25: // Ukrainian
+        charCountPerLine = CHARCOUNT_RUSSIA;
+        u8g2.setFont(FONT_RUSSIA); 
         break;
     case 26: // Vietnamese
+        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
         break;
     case 27: // Icelandic
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 28: // Bulgarian
+        charCountPerLine = CHARCOUNT_STANDARD;
+        u8g2.setFont(FONT_STANDARD); 
         break;
     case 29: // Lithuanian
+        charCountPerLine = CHARCOUNT_STANDARD;
+        u8g2.setFont(FONT_STANDARD); 
         break;
     case 30: // Latvian
+        charCountPerLine = CHARCOUNT_STANDARD;
+        u8g2.setFont(FONT_STANDARD); 
         break;
     case 31: // Slovenian
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 32: // Croatian
+        charCountPerLine = CHARCOUNT_EUROPE;
+        u8g2.setFont(FONT_EUROPE); 
         break;
     case 33: // Estonian
+        charCountPerLine = CHARCOUNT_STANDARD;
+        u8g2.setFont(FONT_STANDARD); 
         break;
     default:
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
+        charCountPerLine = CHARCOUNT_STANDARD;
+        u8g2.setFont(FONT_STANDARD); 
         break;
   }
 }
 
+/*
+u8g2_font_wqy12_t_chinese1	411	9,491
+u8g2_font_wqy12_t_chinese2	574	13,701
+u8g2_font_wqy12_t_chinese3	993	25,038
+u8g2_font_wqy12_t_gb2312a	4041	111,359
+u8g2_font_wqy12_t_gb2312b	4531	120,375
+u8g2_font_wqy12_t_gb2312	7539	208,228
+u8g2_font_wqy13_t_chinese1	411	10,341
+u8g2_font_wqy13_t_chinese2	574	14,931
+u8g2_font_wqy13_t_chinese3	993	27,370
+u8g2_font_wqy13_t_gb2312a	4041	121,327
+u8g2_font_wqy13_t_gb2312b	4531	130,945
+u8g2_font_wqy13_t_gb2312	7539	227,383
+u8g2_font_wqy14_t_chinese1	411	11,368
+u8g2_font_wqy14_t_chinese2	574	16,443
+u8g2_font_wqy14_t_chinese3	993	30,200
+u8g2_font_wqy14_t_gb2312a	4040	133,898
+u8g2_font_wqy14_t_gb2312b	4530	143,477
+u8g2_font_wqy14_t_gb2312	7538	251,515
+u8g2_font_wqy15_t_chinese1	411	12,590
+u8g2_font_wqy15_t_chinese2	574	18,133
+u8g2_font_wqy15_t_chinese3	993	33,165
+u8g2_font_wqy15_t_gb2312a	4041	147,563
+u8g2_font_wqy15_t_gb2312b	4531	158,713
+u8g2_font_wqy15_t_gb2312	7539	276,938
+u8g2_font_wqy16_t_chinese1	411	14,229
+u8g2_font_wqy16_t_chinese2	574	20,245
+u8g2_font_wqy16_t_chinese3	993	37,454
+u8g2_font_wqy16_t_gb2312a	4041	169,286
+u8g2_font_wqy16_t_gb2312b	4531	182,271
+u8g2_font_wqy16_t_gb2312	7539	318,090
+*/
 
-// u8g2_font_wqy12_t_chinese1	411	9,491
-// u8g2_font_wqy12_t_chinese2	574	13,701
-// u8g2_font_wqy12_t_chinese3	993	25,038
-// u8g2_font_wqy12_t_gb2312a	4041	111,359
-// u8g2_font_wqy12_t_gb2312b	4531	120,375
-// u8g2_font_wqy12_t_gb2312	7539	208,228
-// u8g2_font_wqy13_t_chinese1	411	10,341
-// u8g2_font_wqy13_t_chinese2	574	14,931
-// u8g2_font_wqy13_t_chinese3	993	27,370
-// u8g2_font_wqy13_t_gb2312a	4041	121,327
-// u8g2_font_wqy13_t_gb2312b	4531	130,945
-// u8g2_font_wqy13_t_gb2312	7539	227,383
-// u8g2_font_wqy14_t_chinese1	411	11,368
-// u8g2_font_wqy14_t_chinese2	574	16,443
-// u8g2_font_wqy14_t_chinese3	993	30,200
-// u8g2_font_wqy14_t_gb2312a	4040	133,898
-// u8g2_font_wqy14_t_gb2312b	4530	143,477
-// u8g2_font_wqy14_t_gb2312	7538	251,515
-// u8g2_font_wqy15_t_chinese1	411	12,590
-// u8g2_font_wqy15_t_chinese2	574	18,133
-// u8g2_font_wqy15_t_chinese3	993	33,165
-// u8g2_font_wqy15_t_gb2312a	4041	147,563
-// u8g2_font_wqy15_t_gb2312b	4531	158,713
-// u8g2_font_wqy15_t_gb2312	7539	276,938
-// u8g2_font_wqy16_t_chinese1	411	14,229
-// u8g2_font_wqy16_t_chinese2	574	20,245
-// u8g2_font_wqy16_t_chinese3	993	37,454
-// u8g2_font_wqy16_t_gb2312a	4041	169,286
-// u8g2_font_wqy16_t_gb2312b	4531	182,271
-// u8g2_font_wqy16_t_gb2312	7539	318,090
+/*
+u8g2_font_f16_t_japanese1:
+
+지원 글자 수: 3,338자 (JIS X 0208 + NEC + IBM Extended)
+폰트 용량: 약 65.5KB
+u8g2_font_f16_t_japanese2:
+
+지원 글자 수: 4,965자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer)
+폰트 용량: 약 98.1KB
+u8g2_font_f16_t_japanese3:
+
+지원 글자 수: 13,108자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer + JIS X 0213:2004)
+폰트 용량: 약 257.9KB
+u8g2_font_f16_t_japanese4:
+
+지원 글자 수: 24,083자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer + JIS X 0213:2004 + 管理画面漢字)
+폰트 용량: 약 475.2KB
+*/
