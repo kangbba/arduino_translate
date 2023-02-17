@@ -27,7 +27,12 @@
 // #define SERVICE_UUID           "2ef826d2-a48d-11ed-a8fc-0242ac120002" // UART service UUID
 // #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
 // #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
-
+/*
+  Fontname: -FontForge-DOSGothic-Medium-R-Normal--16-150-75-75-P-159-ISO10646-1
+  Copyright: Copyright (c) 2016 Damheo Lee
+  Glyphs: 95/24869
+  BBX Build Mode: 0
+*/
 
 
 
@@ -60,6 +65,8 @@ U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* 
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "beb5483e-36e1-4688-b7f5-ea07361b26a8" // 
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a9" // 
+
+
 
 
 
