@@ -364,11 +364,10 @@ void ChangeUTF(int langCodeInt)
         break;
     case 5: // Chinese
         charCountPerLine = CHARCOUNT_CHINA;
-       // u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
+         u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
         charCountPerLine = 26;
-        u8g2.setFont(u8g2_font_unifont_t_arabic);
         break;
     case 7: // Russian
         charCountPerLine = CHARCOUNT_RUSSIA;
@@ -391,7 +390,7 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 12: // Korean
-        charCountPerLine = 12;
+        charCountPerLine = 36;
         // u8g2.setFont(u8g2_font_myfont_tf);
         u8g2.setFont(u8g2_font_unifont_t_korean_NanumGothicCoding_16);
         // u8g2.setFontMode(1);
