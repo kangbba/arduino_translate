@@ -48,7 +48,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#include "u8g2_font_unifont_t_korean_NanumGothicCoding_16.h"
+#include "u8g2_korea_kang4.h"
 
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -89,10 +89,17 @@ int gapWithTextLines = 20;
 int charCountPerLine = 12;
 
 
-//doing scroll
+//긴 텍스트를 위한 스크롤 기능
 unsigned long scrollStartTime = 0;
 unsigned long accumTimeForScroll = 0;
-long previousMillis = 0;
+long previousMillis = 0; 
+
+//아래의 두개 수정가능
+int scrollStartDelayTime = 3000; // (3000이면 3초있다가 스크롤 시작)
+int scrollDelay = 300;// (이값이 클수록 스크롤 속도가 느려짐)
+
+
+
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -228,8 +235,8 @@ void loop() {
   {
     Serial.println("Invalid input format. It should be in the format 'langcode:someMsg;'");
   }
-  if (accumTimeForScroll >= 2000)
-     scrollWithInterval(100);
+  if (accumTimeForScroll >= scrollStartDelayTime)
+     scrollWithInterval(scrollDelay);
   else{
     accumTimeForScroll += deltaTime;
   }
@@ -294,7 +301,7 @@ void Message(int langCode, String str, bool useScroll)
   for (int i = 0; i < str_obj.length(); i += line_len) {
     // 출력할 문자열 추출
     String line = str_obj.substring(i, i + line_len);
-    
+
     // UTF-8 문자열을 출력
     u8g2.drawUTF8(x, y - currentCursorY, line.c_str());
     // 출력 위치를 다음 줄로 이동
@@ -306,6 +313,46 @@ void Message(int langCode, String str, bool useScroll)
   u8g2.clearBuffer(); // 버퍼 초기화
 
 }
+// void Message(int langCode, String str, bool useScroll)
+// {
+//   ChangeUTF(langCode);
+//   u8g2.setFlipMode(0);
+
+//   // 출력 위치 초기화
+//   int x = 0, y = 0;
+  
+//   // 폰트의 너비와 높이 구하기
+
+//   // 문자열을 픽셀 단위로 나누어 출력
+//  // UTF-8 문자열을 디코딩하여 출력
+// // UTF-8 문자열을 디코딩하여 출력
+// for (int i = 0; i < str.length(); ) {
+//   // 다음 문자의 길이 계산
+// uint8_t len = u8g2.getUTF8Width(reinterpret_cast<const char*>(str.substring(i).c_str()));
+
+//   // UTF-8로 디코딩
+//   String utf8Str = str.substring(i, i + len);
+  
+//   // 문자열 출력
+//   u8g2.drawUTF8(x, y, utf8Str.c_str());
+
+//   // 다음 문자의 출력 위치 계산
+//   int fontWidth = u8g2.getUTF8Width(utf8Str.c_str());
+//   x += fontWidth;
+//   i += len;
+
+//   // 출력 위치가 화면 폭을 초과하는 경우 줄바꿈
+//   if (x + fontWidth > 128) {
+//     x = 0;
+//     y += gapWithTextLines;
+//   }
+// }
+
+
+//   maxCursorY = y;
+//   u8g2.sendBuffer();
+//   u8g2.clearBuffer(); // 버퍼 초기화
+// }
 void ChangeUTF(int langCodeInt)
 {
   int CHARCOUNT_STANDARD = 15;
@@ -390,9 +437,9 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 12: // Korean
-        charCountPerLine = 36;
+        charCountPerLine = 18;
         // u8g2.setFont(u8g2_font_myfont_tf);
-        u8g2.setFont(u8g2_font_unifont_t_korean_NanumGothicCoding_16);
+        u8g2.setFont(u8g2_korea_kang4);
         // u8g2.setFontMode(1);
         // u8g2.setFont(reinterpret_cast<const uint8_t*>("NanumSquareRoundR.bdf"));
         break;
