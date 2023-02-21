@@ -35,6 +35,7 @@
 */
 
 
+#include <utf8.h>
 
 #include "BluetoothSerial.h"
 #include <SPI.h>
@@ -144,7 +145,8 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
-  Message(0, "Device Started", false);
+
+  openingMent();
 }
 
 void initBLEDevice()
@@ -178,6 +180,23 @@ void initBLEDevice()
 
 //////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
 
+  void openingMent()
+  {
+    String str =  "banGawer";
+    u8g2.clearBuffer(); // 버퍼 초기화
+    u8g2.setFont(u8g2_font_lubBI08_te);
+    u8g2.drawUTF8(32, 34, str.c_str());
+    u8g2.sendBuffer();
+  }
+  void connectedMent()
+  {
+     String str2 =  "Device Connected";
+     u8g2.clearBuffer(); // 버퍼 초기화
+     u8g2.setFont(u8g2_font_lubBI08_te);
+     u8g2.drawUTF8(13, 34, str2.c_str());
+     u8g2.sendBuffer();
+  }
+
 void loop() {
 
   unsigned long currentMillis = millis();
@@ -201,8 +220,10 @@ void loop() {
   if (deviceConnected && !oldDeviceConnected) {
   // do stuff here on connecting
       oldDeviceConnected = deviceConnected;
-      Message(0, "Device Connected", false);
+
+      Serial.print("연결완료");
   }
+
 
   bool recentMessageExist = nowCallback != previousCallback;
   if(recentMessageExist)
@@ -214,12 +235,20 @@ void loop() {
     accumTimeForScroll = 0;
   }
 
-   if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
+  if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
   {
     previousCallback = nowCallback;
     int langCode;
     String someMsg;
     parseLangCodeAndMessage(recentMessage, langCode, someMsg);
+    if(langCode == 500)
+    {
+      connectedMent();
+    }
+    else{
+      someMsg.trim();
+      Message(langCode, someMsg);
+    }
     // Serial.print("langCode ");
     // Serial.print(langCode);
     // Serial.println();
@@ -228,8 +257,7 @@ void loop() {
     // Serial.println();
     // Serial.print("someMsg : ");
     // Serial.println(someMsg);
-    someMsg.trim();
-    Message(langCode, someMsg, true);
+   // 
   } 
   else 
   {
@@ -277,7 +305,8 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
 //   u8g2.print("안녕하세요");
 // }
 
-void Message(int langCode, String str, bool useScroll)
+
+void Message(int langCode, String str)
 {
  // u8g2.drawHLine(0, 4 - currentCursorY, deviceWidth);
 
@@ -288,82 +317,51 @@ void Message(int langCode, String str, bool useScroll)
   // str을 String 객체로 변환
   String str_obj = String(str);
 
-  // 한 줄당 출력할 문자 수
-  int line_len = charCountPerLine;
-
   // 출력 위치 초기화
   int initialHeight = 5;
-
+  int padding = 0;
   int height = initialHeight + gapWithTextLines;
+
   u8g2_uint_t x = 0, y = height;
-  
-  // 문자열을 일정 길이 단위로 나누어 출력
-  for (int i = 0; i < str_obj.length(); i += line_len) {
-    // 출력할 문자열 추출
-    String line = str_obj.substring(i, i + line_len);
+  u8g2.setCursor(padding, y - currentCursorY);
+  for (int i = 0; i < str.length(); i++) {
+    char currentChar = str.charAt(i);
 
-    // UTF-8 문자열을 출력
-    u8g2.drawUTF8(x, y - currentCursorY, line.c_str());
-    // 출력 위치를 다음 줄로 이동
-    y += gapWithTextLines;
+    String charString(currentChar);
+    int charWidth = getCharWidth(charString);
+    if (x + charWidth >  110 ) {
+        if (32 <= currentChar && currentChar <= 47) {
+            continue;  // skip space and punctuation characters
+        }
+        x = padding;
+        y += gapWithTextLines;
+        u8g2.setCursor(x, y - currentCursorY);
+    }
+    u8g2.print(currentChar);
+    x += charWidth;
   }
-  maxCursorY = y;
-
+  maxCursorY = y + 20;
   u8g2.sendBuffer();
   u8g2.clearBuffer(); // 버퍼 초기화
+  
 
 }
-// void Message(int langCode, String str, bool useScroll)
-// {
-//   ChangeUTF(langCode);
-//   u8g2.setFlipMode(0);
-
-//   // 출력 위치 초기화
-//   int x = 0, y = 0;
-  
-//   // 폰트의 너비와 높이 구하기
-
-//   // 문자열을 픽셀 단위로 나누어 출력
-//  // UTF-8 문자열을 디코딩하여 출력
-// // UTF-8 문자열을 디코딩하여 출력
-// for (int i = 0; i < str.length(); ) {
-//   // 다음 문자의 길이 계산
-// uint8_t len = u8g2.getUTF8Width(reinterpret_cast<const char*>(str.substring(i).c_str()));
-
-//   // UTF-8로 디코딩
-//   String utf8Str = str.substring(i, i + len);
-  
-//   // 문자열 출력
-//   u8g2.drawUTF8(x, y, utf8Str.c_str());
-
-//   // 다음 문자의 출력 위치 계산
-//   int fontWidth = u8g2.getUTF8Width(utf8Str.c_str());
-//   x += fontWidth;
-//   i += len;
-
-//   // 출력 위치가 화면 폭을 초과하는 경우 줄바꿈
-//   if (x + fontWidth > 128) {
-//     x = 0;
-//     y += gapWithTextLines;
-//   }
-// }
-
-
-//   maxCursorY = y;
-//   u8g2.sendBuffer();
-//   u8g2.clearBuffer(); // 버퍼 초기화
-// }
+int getCharWidth(String s)
+{
+  return u8g2.getUTF8Width(s.c_str());
+}
 void ChangeUTF(int langCodeInt)
 {
+  int CHARCOUNT_ENGLISH = 17;
   int CHARCOUNT_STANDARD = 15;
   int CHARCOUNT_CHINA = 27;
-  int CHARCOUNT_EUROPE = 18;
+  int CHARCOUNT_EUROPE = 17;
   int CHARCOUNT_RUSSIA = 27;
 
 
   charCountPerLine = CHARCOUNT_STANDARD; // 이것은 기본값이므로 여기서 수정하지말고 아래에서 나라별로 수정하세요.
 
-  const uint8_t *FONT_ENGLISH = u8g2_font_unifont_t_korean2; 
+  const uint8_t *FONT_ENGLISH = u8g2_font_ncenR12_tr; 
   const uint8_t *FONT_KOREA = u8g2_font_unifont_t_korean2; 
   const uint8_t *FONT_STANDARD = u8g2_font_unifont_t_symbols; 
   const uint8_t *FONT_EUROPE = u8g2_font_7x14_tf; 
@@ -394,7 +392,7 @@ void ChangeUTF(int langCodeInt)
 
   switch (langCodeInt) {
     case 1: // English
-        charCountPerLine = 14;
+        charCountPerLine = CHARCOUNT_ENGLISH;
         u8g2.setFont(FONT_ENGLISH);
         break;
     case 2: // Spanish
