@@ -49,7 +49,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#include "u8g2_korea_kang4.h"
+// #include "u8g2_korea_kang4.h"
 
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -86,8 +86,7 @@ int deviceWidth = 128;
 int maxCursorY = 0;
 int currentCursorY = 0;
 
-int gapWithTextLines = 20;
-int charCountPerLine = 12;
+int gapWithTextLines = 24;
 
 
 //긴 텍스트를 위한 스크롤 기능
@@ -97,7 +96,7 @@ long previousMillis = 0;
 
 //아래의 두개 수정가능
 int scrollStartDelayTime = 3000; // (3000이면 3초있다가 스크롤 시작)
-int scrollDelay = 300;// (이값이 클수록 스크롤 속도가 느려짐)
+int scrollDelay = 200;// (이값이 클수록 스크롤 속도가 느려짐)
 
 
 
@@ -132,6 +131,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         nowCallback++;
       }
     }
+
 };
 
 
@@ -145,6 +145,7 @@ void setup() {
   u8g2.setFontDirection(0);
   u8g2.clearBuffer();
 
+  clearSerialBuffer();
 
   openingMent();
 }
@@ -152,7 +153,7 @@ void setup() {
 void initBLEDevice()
 {
   // Create the BLE Device
-  BLEDevice::init("CANDY3");
+  BLEDevice::init("banGawer");
   // Create the BLE Server
   pServer = BLEDevice::createServer();
  // pServer->setMtu(256);
@@ -233,31 +234,22 @@ void loop() {
     previousCallback = nowCallback;
 
     accumTimeForScroll = 0;
+
+
   }
 
   if (recentMessage.length() > 0 && recentMessage.indexOf(":") != -1 && recentMessage.indexOf(";") != -1) 
   {
-    previousCallback = nowCallback;
     int langCode;
     String someMsg;
     parseLangCodeAndMessage(recentMessage, langCode, someMsg);
-    if(langCode == 500)
+
+    someMsg.trim();
+    if(langCode == 5)
     {
-      connectedMent();
+      someMsg = replaceChinesePunctuations(someMsg);
     }
-    else{
-      someMsg.trim();
-      Message(langCode, someMsg);
-    }
-    // Serial.print("langCode ");
-    // Serial.print(langCode);
-    // Serial.println();
-    // Serial.print("someMsg ");
-    // Serial.print(someMsg);
-    // Serial.println();
-    // Serial.print("someMsg : ");
-    // Serial.println(someMsg);
-   // 
+    Message(langCode, someMsg);
   } 
   else 
   {
@@ -269,6 +261,24 @@ void loop() {
     accumTimeForScroll += deltaTime;
   }
   previousMillis = currentMillis;
+
+
+    // Serial.print("langCode ");
+    // Serial.print(langCode);
+    // Serial.println();
+    // Serial.print("someMsg ");
+    // Serial.print(someMsg);
+    // Serial.println();
+    // Serial.print("someMsg : ");
+    // Serial.println(someMsg);
+   // 
+  
+}
+//////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
+void clearSerialBuffer() {
+  while (Serial.available() > 0) {
+    Serial.read();
+  }
 }
 void scrollWithInterval(long interval)
 {
@@ -290,8 +300,6 @@ void scrollWithInterval(long interval)
   
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
-
 void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   int separatorIndex = input.indexOf(":");
   langCode = input.substring(0, separatorIndex).toInt();
@@ -306,12 +314,33 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
 // }
 
 
+bool isCharValid(String charStr) {
+    for (int i = 0; i < charStr.length(); i++) {
+        if (charStr[i] < 0x80) { // ASCII 문자인 경우
+            continue;
+        }
+        // Unicode 범위에 속하지 않는 문자는 유효하지 않다고 판단
+        if ((charStr[i] >= 0x80 && charStr[i] <= 0xBF) ||
+            (charStr[i] >= 0xC0 && charStr[i] <= 0xDF) ||
+            (charStr[i] >= 0xE0 && charStr[i] <= 0xEF) ||
+            (charStr[i] >= 0xF0 && charStr[i] <= 0xF7) ||
+            (charStr[i] >= 0xF8 && charStr[i] <= 0xFB) ||
+            (charStr[i] >= 0xFC && charStr[i] <= 0xFD)) {
+            continue;
+        }
+        Serial.print("유효하지않은 char 발견 ");
+        Serial.println(charStr);
+        return false;
+    }
+    return true;
+}
+
+
+
+
 void Message(int langCode, String str)
 {
- // u8g2.drawHLine(0, 4 - currentCursorY, deviceWidth);
-
   ChangeUTF(langCode);
-  // u8g2.setFontMode(1);
   u8g2.setFlipMode(0);
 
   // str을 String 객체로 변환
@@ -324,62 +353,125 @@ void Message(int langCode, String str)
 
   u8g2_uint_t x = 0, y = height;
   u8g2.setCursor(padding, y - currentCursorY);
-  Serial.println("////");
-  for (int i = 0; i < str.length(); i++) {
-    char currentChar = str.charAt(i);
-
-    // String charString(currentChar);
+  for (int i = 0; i < str.length();) {
+    int charSize = getCharSize(str[i]); // 다음 문자의 크기 계산
+    String currentCharStr = str.substring(i, i+charSize); // 다음 문자 추출
+    Serial.print(currentCharStr);
+    //  if (!isCharValid(currentCharStr)) { // 문자가 유효하지 않은 경우 스킵
+    //     i += charSize; // 다음 문자로 이동
+    //     continue;
+    // }
+    char currentChar = currentCharStr.charAt(0);
     int charWidth = getCharWidth(currentChar, langCode);
-    Serial.print((int)currentChar);
-    Serial.print(" ");
+   // int charWidth = charSize;
+    // 이번 문자 출력
     if (x + charWidth >  108) {
-        if (getIfNumber(currentChar) || getIfPunctuation(currentChar)) {
+      if (isNumber(currentChar) || isPunctuation(currentChar)) {
             continue;  // skip space and punctuation characters
         }
         x = padding;
         y += gapWithTextLines;
         u8g2.setCursor(x, y - currentCursorY);
     }
-    u8g2.print(currentChar);
+    u8g2.print(currentCharStr);
     x += charWidth;
+
+    i += charSize; // 다음 문자로 이동
   }
-  Serial.println("////");
-  maxCursorY = y + 30;
+  maxCursorY = y + gapWithTextLines * 2;
   u8g2.sendBuffer();
   u8g2.clearBuffer(); // 버퍼 초기화
+  Serial.println("");
 }
-bool getIfPunctuation(char c)
-{
-  //return (c == ' ' || c == ';' || c == ',' || c == '.' || c == '?' || c == '!');
-  return (32 <= c && c <= 47);
+int getCharSize(char c) {
+  if ((c & 0x80) == 0) {
+    // ASCII 문자인 경우 크기는 1
+    return 1;
+  } else if ((c & 0xE0) == 0xC0) {
+    // 2바이트 문자인 경우 크기는 2
+    return 2;
+  } else if ((c & 0xF0) == 0xE0) {
+    // 3바이트 문자인 경우 크기는 3
+    return 3;
+  } else if ((c & 0xF8) == 0xF0) {
+    // 4바이트 문자인 경우 크기는 4
+    return 4;
+  } else {
+    // 그 외의 경우 잘못된 문자이므로 크기는 1
+    return 1;
+  }
 }
-bool getIfNumber(char c)
-{
-  //return (c == ' ' || c == ';' || c == ',' || c == '.' || c == '?' || c == '!');
-  return c >= 0x30 && c <= 0x39;
+// 입력된 문자가 punctuation인지 여부를 반환하는 함수
+bool isPunctuation(char c) {
+    if (c >= 32 && c <= 47) return true; // sp!"#$%&'()*+,-./
+    if (c >= 58 && c <= 64) return true; // :;<=>?@
+    if (c >= 91 && c <= 96) return true; // [\]^_`
+    if (c >= 123 && c <= 126) return true; // {|}~
+    return false;
 }
-bool getIfAlphabet(char c)
-{
-  return (65<= c && c <= 90) || (97<= c && c <= 122);
+
+// 입력된 문자가 숫자인지 여부를 반환하는 함수
+bool isNumber(char c) {
+    return (c >= 48 && c <= 57);
+}
+
+// 입력된 문자가 알파벳인지 여부를 반환하는 함수
+bool isAlphabet(char c) {
+    return ((c >= 65 && c <= 90) || (c >= 97 && c <= 122));
+}
+
+// 입력된 문자가 중국어 문자인지 여부를 반환하는 함수
+bool isChinese(char c) {
+    return (c >= -24389 && c <= -20167); // 중국어 문자의 유니코드 범위
+}
+
+// 입력된 문자가 한글 문자인지 여부를 반환하는 함수
+bool isKorean(char c) {
+    return ((c >= -52268 && c <= -49324) || (c >= -8400 && c <= -8179)); // 한글 문자의 유니코드 범위
+}
+String replaceChinesePunctuations(String str) {
+  // const char* punctuations[] = {"，", "。", "！", "？", "；", "：", "、", "（", "）"};
+  // const char* punctuationsForReplace[] = {", ", "。", "!", "?", ";", ":", "、", "(", ")"};
+  const char* punctuations[] = {"，", "？"};
+  const char* punctuationsForReplace[] = {",", "?"};
+
+  for (int i = 0; i < sizeof(punctuations)/sizeof(punctuations[0]); i++) {
+    str.replace(punctuations[i], punctuationsForReplace[i]);
+  }
+
+  return str;
 }
 int getCharWidth(char c, int langCode) {
-  bool isPunctuation = getIfPunctuation(c);
-  bool isAlphabet = getIfAlphabet(c);
-  bool isNumber = getIfNumber(c);
+
+  bool _isPunctuation = isPunctuation(c);
+  bool _isAlphabet = isAlphabet(c);
+  bool _isNumber = isNumber(c);
   if (langCode == 5) {  // if language is Chinese
-    if (isPunctuation){
-      return 1; 
+    if (_isPunctuation){
+      return 4; 
+    }
+    else if(_isAlphabet)
+    {
+      return 4;
     } 
     else {
-      return 12/3;
+      return 13;
     }
   } 
   else if (langCode == 12) {
-    if (isPunctuation){
-      return 1; 
+    if (_isPunctuation){
+      return 4; 
     }
     else {
-      return 18/3; 
+      return 16; 
+    }
+  } 
+  else if (langCode == 10) {
+    if (_isPunctuation){
+      return 4; 
+    }
+    else {
+      return 14; 
     }
   } 
   else { 
@@ -396,7 +488,6 @@ void ChangeUTF(int langCodeInt)
   int CHARCOUNT_RUSSIA = 27;
 
 
-  charCountPerLine = CHARCOUNT_STANDARD; // 이것은 기본값이므로 여기서 수정하지말고 아래에서 나라별로 수정하세요.
 
   const uint8_t *FONT_ENGLISH = u8g2_font_ncenR12_tr; 
   const uint8_t *FONT_KOREA = u8g2_font_unifont_t_korean2; 
@@ -422,151 +513,112 @@ void ChangeUTF(int langCodeInt)
 //일본어 u8g2_font_wqy15_t_gb2312 u8g2_font_wqy13_t_gb2312 u8g2_font_wqy14_t_gb2312한자짤림 
 //u8g2_font_wqy15_t_gb2312 u8g2_font_wqy16_t_gb2312양호 한자좀짤림 
 
-//charCountPerLine는 화면에 표시되는 한줄에 몇개의 글자를 표시할지를 정하는 변수임
-//charCountPerLine를 자동으로 계산하고 싶지만 폰트가 다양하고 그 정보가 누락된 경우가많아서 직접지정해줘야 한다.
-//화면에 글자가 다 안 담길경우 아래의 charCountPerLine 값을 줄여서 한줄당 표시될 글자수를 줄여주셈.
-//화면은 넉넉한데 글자가 몇자 쓰지도않고 줄을바꾸면 charCountPerLine 값을 늘려서 한줄당 표시될 글자수를 늘려주셈.
 
   switch (langCodeInt) {
     case 1: // English
-        charCountPerLine = CHARCOUNT_ENGLISH;
         u8g2.setFont(FONT_ENGLISH);
         break;
     case 2: // Spanish
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 3: // French
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 4: // German
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 5: // Chinese
-        charCountPerLine = CHARCOUNT_CHINA;
          u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
-        charCountPerLine = 26;
+        u8g2.setFont(u8g2_font_unifont_t_arabic); 
         break;
     case 7: // Russian
-        charCountPerLine = CHARCOUNT_RUSSIA;
         u8g2.setFont(FONT_RUSSIA); 
         break;
     case 8: // Portuguese
-        charCountPerLine = CHARCOUNT_EUROPE;
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(FONT_STANDARD); 
         break;
     case 9: // Italian
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 10: // Japanese
-        charCountPerLine = 21;
         u8g2.setFont(FONT_JAPAN);
         break;
     case 11: // Dutch
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 12: // Korean
-        charCountPerLine = 18;
-        // u8g2.setFont(u8g2_font_myfont_tf);
-        u8g2.setFont(u8g2_korea_kang4);
-        // u8g2.setFontMode(1);
-        // u8g2.setFont(reinterpret_cast<const uint8_t*>("NanumSquareRoundR.bdf"));
+        u8g2.setFont(u8g2_font_unifont_t_korean2);
+       // u8g2.setFont(u8g2_korea_kang4);
         break;
     case 13: // Swedish å 
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 14: // Turkish
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 15: // Polish
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 16: // Danish å 
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 17: // Norwegian å 
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 18: // Finnish
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 19: // Czech
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 20: // Thai
-        charCountPerLine = 45;
         u8g2.setFont(u8g2_font_etl14thai_t);
         //u8g2_font_etl14thai_t
         //u8g2_font_ncenB08_tr
         //u8g2_font_ncenB14_tr 
         break;
     case 21: // Greek
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 22: // Hungarian
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 23: // Hebrew
-        charCountPerLine = 20;
         u8g2.setFont(u8g2_font_cu12_t_hebrew); 
         break;
     case 24: // Romanian
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 25: // Ukrainian
-        charCountPerLine = CHARCOUNT_RUSSIA;
         u8g2.setFont(FONT_RUSSIA); 
         break;
     case 26: // Vietnamese
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
         break;
     case 27: // Icelandic
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 28: // Bulgarian
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(FONT_STANDARD); 
         break;
     case 29: // Lithuanian
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(FONT_STANDARD); 
         break;
     case 30: // Latvian
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(FONT_STANDARD); 
         break;
     case 31: // Slovenian
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 32: // Croatian
-        charCountPerLine = CHARCOUNT_EUROPE;
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 33: // Estonian
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(FONT_STANDARD); 
         break;
     default:
-        charCountPerLine = CHARCOUNT_STANDARD;
         u8g2.setFont(FONT_STANDARD); 
         break;
   }
