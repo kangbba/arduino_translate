@@ -319,18 +319,21 @@ void Message(int langCode, String str)
 
   // 출력 위치 초기화
   int initialHeight = 5;
-  int padding = 0;
+  int padding = 2;
   int height = initialHeight + gapWithTextLines;
 
   u8g2_uint_t x = 0, y = height;
   u8g2.setCursor(padding, y - currentCursorY);
+  Serial.println("////");
   for (int i = 0; i < str.length(); i++) {
     char currentChar = str.charAt(i);
 
-    String charString(currentChar);
-    int charWidth = getCharWidth(charString);
-    if (x + charWidth >  110 ) {
-        if (32 <= currentChar && currentChar <= 47) {
+    // String charString(currentChar);
+    int charWidth = getCharWidth(currentChar, langCode);
+    Serial.print((int)currentChar);
+    Serial.print(" ");
+    if (x + charWidth >  108) {
+        if (getIfNumber(currentChar) || getIfPunctuation(currentChar)) {
             continue;  // skip space and punctuation characters
         }
         x = padding;
@@ -340,15 +343,49 @@ void Message(int langCode, String str)
     u8g2.print(currentChar);
     x += charWidth;
   }
-  maxCursorY = y + 20;
+  Serial.println("////");
+  maxCursorY = y + 30;
   u8g2.sendBuffer();
   u8g2.clearBuffer(); // 버퍼 초기화
-  
-
 }
-int getCharWidth(String s)
+bool getIfPunctuation(char c)
 {
-  return u8g2.getUTF8Width(s.c_str());
+  //return (c == ' ' || c == ';' || c == ',' || c == '.' || c == '?' || c == '!');
+  return (32 <= c && c <= 47);
+}
+bool getIfNumber(char c)
+{
+  //return (c == ' ' || c == ';' || c == ',' || c == '.' || c == '?' || c == '!');
+  return c >= 0x30 && c <= 0x39;
+}
+bool getIfAlphabet(char c)
+{
+  return (65<= c && c <= 90) || (97<= c && c <= 122);
+}
+int getCharWidth(char c, int langCode) {
+  bool isPunctuation = getIfPunctuation(c);
+  bool isAlphabet = getIfAlphabet(c);
+  bool isNumber = getIfNumber(c);
+  if (langCode == 5) {  // if language is Chinese
+    if (isPunctuation){
+      return 1; 
+    } 
+    else {
+      return 12/3;
+    }
+  } 
+  else if (langCode == 12) {
+    if (isPunctuation){
+      return 1; 
+    }
+    else {
+      return 18/3; 
+    }
+  } 
+  else { 
+    String s = String(c);
+    return u8g2.getUTF8Width(s.c_str());
+  }
 }
 void ChangeUTF(int langCodeInt)
 {
