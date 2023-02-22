@@ -244,7 +244,6 @@ void loop() {
     String someMsg;
     parseLangCodeAndMessage(recentMessage, langCode, someMsg);
 
-    someMsg.trim();
     if(langCode == 5)
     {
       someMsg = replaceChinesePunctuations(someMsg);
@@ -366,9 +365,9 @@ void Message(int langCode, String str)
    // int charWidth = charSize;
     // 이번 문자 출력
     if (x + charWidth >  108) {
-      if (isNumber(currentChar) || isPunctuation(currentChar)) {
-            continue;  // skip space and punctuation characters
-        }
+        // if (isNumber(currentChar) || isPunctuation(currentChar)) {
+        //     continue;  // skip space and punctuation characters
+        // }
         x = padding;
         y += gapWithTextLines;
         u8g2.setCursor(x, y - currentCursorY);
@@ -420,15 +419,16 @@ bool isAlphabet(char c) {
     return ((c >= 65 && c <= 90) || (c >= 97 && c <= 122));
 }
 
-// 입력된 문자가 중국어 문자인지 여부를 반환하는 함수
-bool isChinese(char c) {
-    return (c >= -24389 && c <= -20167); // 중국어 문자의 유니코드 범위
-}
+// // 입력된 문자가 중국어 문자인지 여부를 반환하는 함수
+// bool isChinese(char c) {
+//     return (c >= -24389 && c <= -20167); // 중국어 문자의 유니코드 범위
+// }
 
-// 입력된 문자가 한글 문자인지 여부를 반환하는 함수
-bool isKorean(char c) {
-    return ((c >= -52268 && c <= -49324) || (c >= -8400 && c <= -8179)); // 한글 문자의 유니코드 범위
-}
+// // 입력된 문자가 한글 문자인지 여부를 반환하는 함수
+// bool isKorean(char c) {
+//     return ((c >= -52268 && c <= -49324) || (c >= -8400 && c <= -8179)); // 한글 문자의 유니코드 범위
+// }
+
 String replaceChinesePunctuations(String str) {
   // const char* punctuations[] = {"，", "。", "！", "？", "；", "：", "、", "（", "）"};
   // const char* punctuationsForReplace[] = {", ", "。", "!", "?", ";", ":", "、", "(", ")"};
