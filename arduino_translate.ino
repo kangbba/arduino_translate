@@ -1,41 +1,17 @@
-// CHARACTERISTIC_UUID_TX를 통해 데이터를 보내야 합니다.
+/////////////////////////////////////////////////////VERSION : BANGAWER 4 /////////////////////////////////////////////////////////////
+//2월24일 
+//줄바꿈 + 스크롤 버전 워
+//베트남어 출력 성공
+//독일어 출력 성공
+//한글 출력 성공이지만 옛날 한글로 해둠.
+//성공 : 프랑스, 베트남, 중국, 일본, 구한국어, 신한국어, 영어, 스페인어 , 포루투갈 , 독일어, 프랑스, 중국어, 러시아, 이탈리아, 네덜란드(덧치) , 스웨덴어, 터키어,  덴마크 danish, 노르웨이, 필란드어, 그리스, 헝가리 , 히브리, 루마니아
+// 우크라이나어, 아이슬란드, 불가리아, 
+//이번버전에 해결됨 : 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
+//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트, 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-    Video: https://www.youtube.com/watch?v=oCMOYS71NIU
-    Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleNotify.cpp
-    Ported to Arduino ESP32 by Evandro Copercini
-
-   Create a BLE server that, once we receive a connection, will send periodic notifications.
-   The service advertises itself as: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
-   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE" 
-   Has a characteristic of: 6E400003-B5A3-F393-E0A9-E50E24DCCA9E - used to send data with  "NOTIFY"
-
-   The design of creating the BLE server is:
-   1. Create a BLE Server
-   2. Create a BLE Service
-   3. Create a BLE Characteristic on the Service
-   4. Create a BLE Descriptor on the characteristic
-   5. Start the service.
-   6. Start advertising.
-
-   In this example rxValue is the data received (only accessible inside that function).
-   And txValue is the data to be sent, in this example just a byte incremented every second. 
-*/
-
-// See the following for generating UUIDs:
-// https://www.uuidgenerator.net/
-// #define SERVICE_UUID           "2ef826d2-a48d-11ed-a8fc-0242ac120002" // UART service UUID
-// #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
-// #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
-/*
-  Fontname: -FontForge-DOSGothic-Medium-R-Normal--16-150-75-75-P-159-ISO10646-1
-  Copyright: Copyright (c) 2016 Damheo Lee
-  Glyphs: 95/24869
-  BBX Build Mode: 0
-*/
-
-
-#include <utf8.h>
+//5 14 15 
+//5 2 16
 
 #include "BluetoothSerial.h"
 #include <SPI.h>
@@ -49,7 +25,8 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-// #include "u8g2_korea_kang4.h"
+#include "u8g2_korea_kang4.h"
+#include "u8g2_thai_kang1.h"
 
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -61,15 +38,9 @@
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
 
-
-
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "beb5483e-36e1-4688-b7f5-ea07361b26a8" // 
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a9" // 
-
-
-
-
 
 BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
@@ -162,14 +133,14 @@ void initBLEDevice()
   BLEService *pService = pServer->createService(SERVICE_UUID);
   // Create a BLE Characteristic
   pTxCharacteristic = pService->createCharacteristic(
-										CHARACTERISTIC_UUID_TX,
-										BLECharacteristic::PROPERTY_NOTIFY
-									);
+                    CHARACTERISTIC_UUID_TX,
+                    BLECharacteristic::PROPERTY_NOTIFY
+                  ); 
   pTxCharacteristic->addDescriptor(new BLE2902());
   BLECharacteristic * pRxCharacteristic = pService->createCharacteristic(
-											 CHARACTERISTIC_UUID_RX,
-											BLECharacteristic::PROPERTY_WRITE
-										);
+                       CHARACTERISTIC_UUID_RX,
+                      BLECharacteristic::PROPERTY_WRITE
+                    );
   pRxCharacteristic->setCallbacks(new MyCallbacks());
   // Start the service
   pService->start();
@@ -342,14 +313,18 @@ void Message(int langCode, String str)
   ChangeUTF(langCode);
   u8g2.setFlipMode(0);
 
+  u8g2PrintWithEachChar(langCode, str);
+  u8g2.sendBuffer();
+  u8g2.clearBuffer(); // 버퍼 초기화
+  Serial.println("");
+}
+void u8g2PrintWithEachChar(int langCode, String str)
+{
   // str을 String 객체로 변환
   String str_obj = String(str);
-
-  // 출력 위치 초기화
   int initialHeight = 5;
   int padding = 2;
   int height = initialHeight + gapWithTextLines;
-
   u8g2_uint_t x = 0, y = height;
   u8g2.setCursor(padding, y - currentCursorY);
   for (int i = 0; i < str.length();) {
@@ -374,13 +349,9 @@ void Message(int langCode, String str)
     }
     u8g2.print(currentCharStr);
     x += charWidth;
-
     i += charSize; // 다음 문자로 이동
   }
   maxCursorY = y + gapWithTextLines * 2;
-  u8g2.sendBuffer();
-  u8g2.clearBuffer(); // 버퍼 초기화
-  Serial.println("");
 }
 int getCharSize(char c) {
   if ((c & 0x80) == 0) {
@@ -407,6 +378,19 @@ bool isPunctuation(char c) {
     if (c >= 91 && c <= 96) return true; // [\]^_`
     if (c >= 123 && c <= 126) return true; // {|}~
     return false;
+}
+bool isThaiPunctuation(String s) {
+  // Thai punctuation characters
+  const String thaiPunctuations[] = {"็", "ั", "ิ", "ี"};
+
+  // Check if s matches any Thai punctuation character
+  for (int i = 0; i < 4; i++) {
+    if (s == String(thaiPunctuations[i].charAt(0)) + String(thaiPunctuations[i].charAt(1))) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 // 입력된 문자가 숫자인지 여부를 반환하는 함수
@@ -446,13 +430,14 @@ int getCharWidth(char c, int langCode) {
   bool _isPunctuation = isPunctuation(c);
   bool _isAlphabet = isAlphabet(c);
   bool _isNumber = isNumber(c);
+  String s = String(c);
   if (langCode == 5) {  // if language is Chinese
     if (_isPunctuation){
       return 4; 
     }
     else if(_isAlphabet)
     {
-      return 4;
+      return 8;
     } 
     else {
       return 13;
@@ -474,9 +459,39 @@ int getCharWidth(char c, int langCode) {
       return 14; 
     }
   } 
+  else if (langCode == 26){
+    if (_isPunctuation){
+      return 4; 
+    }
+    else {
+      return 8; 
+    }
+  }
+  else if (langCode == 4){
+    if (_isPunctuation){
+      return 4; 
+    }
+    else {
+      return 8; 
+    }
+  }
+  else if(langCode == 20) // thai
+  {
+    if (_isPunctuation){
+      return 4; 
+    }
+    else {
+      return 8; 
+    }
+  }
   else { 
-    String s = String(c);
-    return u8g2.getUTF8Width(s.c_str());
+    if (_isPunctuation){
+      return 4; 
+    }
+    else {
+      return 8; 
+    }
+   // return u8g2.getUTF8Width(s.c_str());
   }
 }
 void ChangeUTF(int langCodeInt)
@@ -531,7 +546,22 @@ void ChangeUTF(int langCodeInt)
          u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
-        u8g2.setFont(u8g2_font_unifont_t_arabic); 
+        u8g2.setFont(u8g2_font_cu12_t_arabic); 
+// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_cu12_t_arabic.png
+// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_10x20_t_arabic.png
+// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_unifont_t_arabic.png
+// u8g2_font_amiri_14_tf
+// u8g2_font_amiri_16_tf
+// u8g2_font_caescaden_sans_16_tu
+// u8g2_font_farsi_opensans_16_t_all
+// u8g2_font_mirza_16_t_all
+// u8g2_font_noto_naskh_arabic_16_t_all
+// u8g2_font_raleway_thin_arabic_16_t_all
+// u8g2_font_tajawal_16_t_all
+// u8g2_font_trochut_arabic_16_t_all
+// u8g2_font_uthmani_16_tr // 페르시아
+// u8g2_font_iranian_sans_16_t_all //페르시아
+
         break;
     case 7: // Russian
         u8g2.setFont(FONT_RUSSIA); 
@@ -550,7 +580,7 @@ void ChangeUTF(int langCodeInt)
         break;
     case 12: // Korean
         u8g2.setFont(u8g2_font_unifont_t_korean2);
-       // u8g2.setFont(u8g2_korea_kang4);
+//        u8g2.setFont(u8g2_korea_kang4);
         break;
     case 13: // Swedish å 
         u8g2.setFont(FONT_EUROPE); 
@@ -559,7 +589,17 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 15: // Polish
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
+// u8g2_font_helvR12_te (Helvetica Regular 12pt)
+// u8g2_font_6x10_te (6x10 Pixel)
+// u8g2_font_6x12_te (6x12 Pixel)
+// u8g2_font_7x14B_te (7x14 Bold Pixel)
+// u8g2_font_8x13B_te (8x13 Bold Pixel)
+// u8g2_font_9x15_te (9x15 Pixel)
+// u8g2_font_9x18_te (9x18 Pixel)
+// u8g2_font_fur14_tf (Futura 14pt)
+// u8g2_font_courB14_tr (Courier Bold 14pt)
+// u8g2_font_inr16_mf (Inconsolata Regular 16pt)
         break;
     case 16: // Danish å 
         u8g2.setFont(FONT_EUROPE); 
@@ -571,16 +611,13 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 19: // Czech
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
         break;
     case 20: // Thai
-        u8g2.setFont(u8g2_font_etl14thai_t);
-        //u8g2_font_etl14thai_t
-        //u8g2_font_ncenB08_tr
-        //u8g2_font_ncenB14_tr 
+        u8g2.setFont(u8g2_font_etl16thai_t);
         break;
     case 21: // Greek
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(u8g2_font_unifont_t_greek); 
         break;
     case 22: // Hungarian
         u8g2.setFont(FONT_EUROPE); 
@@ -595,25 +632,25 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_RUSSIA); 
         break;
     case 26: // Vietnamese
-        u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
+        u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
         break;
     case 27: // Icelandic
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 28: // Bulgarian
-        u8g2.setFont(FONT_STANDARD); 
+        u8g2.setFont(FONT_RUSSIA); 
         break;
     case 29: // Lithuanian
-        u8g2.setFont(FONT_STANDARD); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
         break;
     case 30: // Latvian
-        u8g2.setFont(FONT_STANDARD); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
         break;
     case 31: // Slovenian
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
         break;
     case 32: // Croatian
-        u8g2.setFont(FONT_EUROPE); 
+        u8g2.setFont(u8g2_font_helvR12_te); 
         break;
     case 33: // Estonian
         u8g2.setFont(FONT_STANDARD); 
@@ -625,36 +662,36 @@ void ChangeUTF(int langCodeInt)
 }
 
 /*
-u8g2_font_wqy12_t_chinese1	411	9,491
-u8g2_font_wqy12_t_chinese2	574	13,701
-u8g2_font_wqy12_t_chinese3	993	25,038
-u8g2_font_wqy12_t_gb2312a	4041	111,359
-u8g2_font_wqy12_t_gb2312b	4531	120,375
-u8g2_font_wqy12_t_gb2312	7539	208,228
-u8g2_font_wqy13_t_chinese1	411	10,341
-u8g2_font_wqy13_t_chinese2	574	14,931
-u8g2_font_wqy13_t_chinese3	993	27,370
-u8g2_font_wqy13_t_gb2312a	4041	121,327
-u8g2_font_wqy13_t_gb2312b	4531	130,945
-u8g2_font_wqy13_t_gb2312	7539	227,383
-u8g2_font_wqy14_t_chinese1	411	11,368
-u8g2_font_wqy14_t_chinese2	574	16,443
-u8g2_font_wqy14_t_chinese3	993	30,200
-u8g2_font_wqy14_t_gb2312a	4040	133,898
-u8g2_font_wqy14_t_gb2312b	4530	143,477
-u8g2_font_wqy14_t_gb2312	7538	251,515
-u8g2_font_wqy15_t_chinese1	411	12,590
-u8g2_font_wqy15_t_chinese2	574	18,133
-u8g2_font_wqy15_t_chinese3	993	33,165
-u8g2_font_wqy15_t_gb2312a	4041	147,563
-u8g2_font_wqy15_t_gb2312b	4531	158,713
-u8g2_font_wqy15_t_gb2312	7539	276,938
-u8g2_font_wqy16_t_chinese1	411	14,229
-u8g2_font_wqy16_t_chinese2	574	20,245
-u8g2_font_wqy16_t_chinese3	993	37,454
-u8g2_font_wqy16_t_gb2312a	4041	169,286
-u8g2_font_wqy16_t_gb2312b	4531	182,271
-u8g2_font_wqy16_t_gb2312	7539	318,090
+u8g2_font_wqy12_t_chinese1  411 9,491
+u8g2_font_wqy12_t_chinese2  574 13,701
+u8g2_font_wqy12_t_chinese3  993 25,038
+u8g2_font_wqy12_t_gb2312a 4041  111,359
+u8g2_font_wqy12_t_gb2312b 4531  120,375
+u8g2_font_wqy12_t_gb2312  7539  208,228
+u8g2_font_wqy13_t_chinese1  411 10,341
+u8g2_font_wqy13_t_chinese2  574 14,931
+u8g2_font_wqy13_t_chinese3  993 27,370
+u8g2_font_wqy13_t_gb2312a 4041  121,327
+u8g2_font_wqy13_t_gb2312b 4531  130,945
+u8g2_font_wqy13_t_gb2312  7539  227,383
+u8g2_font_wqy14_t_chinese1  411 11,368
+u8g2_font_wqy14_t_chinese2  574 16,443
+u8g2_font_wqy14_t_chinese3  993 30,200
+u8g2_font_wqy14_t_gb2312a 4040  133,898
+u8g2_font_wqy14_t_gb2312b 4530  143,477
+u8g2_font_wqy14_t_gb2312  7538  251,515
+u8g2_font_wqy15_t_chinese1  411 12,590
+u8g2_font_wqy15_t_chinese2  574 18,133
+u8g2_font_wqy15_t_chinese3  993 33,165
+u8g2_font_wqy15_t_gb2312a 4041  147,563
+u8g2_font_wqy15_t_gb2312b 4531  158,713
+u8g2_font_wqy15_t_gb2312  7539  276,938
+u8g2_font_wqy16_t_chinese1  411 14,229
+u8g2_font_wqy16_t_chinese2  574 20,245
+u8g2_font_wqy16_t_chinese3  993 37,454
+u8g2_font_wqy16_t_gb2312a 4041  169,286
+u8g2_font_wqy16_t_gb2312b 4531  182,271
+u8g2_font_wqy16_t_gb2312  7539  318,090
 */
 
 /*
@@ -674,4 +711,40 @@ u8g2_font_f16_t_japanese4:
 
 지원 글자 수: 24,083자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer + JIS X 0213:2004 + 管理画面漢字)
 폰트 용량: 약 475.2KB
+*/
+
+// CHARACTERISTIC_UUID_TX를 통해 데이터를 보내야 합니다.
+
+/*
+    Video: https://www.youtube.com/watch?v=oCMOYS71NIU
+    Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleNotify.cpp
+    Ported to Arduino ESP32 by Evandro Copercini
+
+   Create a BLE server that, once we receive a connection, will send periodic notifications.
+   The service advertises itself as: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
+   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE" 
+   Has a characteristic of: 6E400003-B5A3-F393-E0A9-E50E24DCCA9E - used to send data with  "NOTIFY"
+
+   The design of creating the BLE server is:
+   1. Create a BLE Server
+   2. Create a BLE Service
+   3. Create a BLE Characteristic on the Service
+   4. Create a BLE Descriptor on the characteristic
+   5. Start the service.
+   6. Start advertising.
+
+   In this example rxValue is the data received (only accessible inside that function).
+   And txValue is the data to be sent, in this example just a byte incremented every second. 
+*/
+
+// See the following for generating UUIDs:
+// https://www.uuidgenerator.net/
+// #define SERVICE_UUID           "2ef826d2-a48d-11ed-a8fc-0242ac120002" // UART service UUID
+// #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
+// #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
+/*
+  Fontname: -FontForge-DOSGothic-Medium-R-Normal—16-150-75-75-P-159-ISO10646-1
+  Copyright: Copyright (c) 2016 Damheo Lee
+  Glyphs: 95/24869
+  BBX Build Mode: 0
 */
