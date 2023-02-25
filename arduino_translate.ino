@@ -1,13 +1,20 @@
-/////////////////////////////////////////////////////VERSION : BANGAWER 4 /////////////////////////////////////////////////////////////
-//2월24일 
-//줄바꿈 + 스크롤 버전 워
-//베트남어 출력 성공
-//독일어 출력 성공
+/////////////////////////////////////////////////////VERSION : BANGAWER 5 /////////////////////////////////////////////////////////////
+
+//2월26일 (BANGAWER5)
+//중요 : 재실행시 이전 정보가 남아있는 버그 수정.
+//openingment banGawer 기존거 좀 올드해보여서 글씨체 바꿔보는중 (마음에 안들면 openingment() 함수안의 내용을 수정하면 됨)
+//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트
+
+//2월25일 (BANGAWER4)
+//이번버전에 해결됨 : 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
+//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트
+
+//2월24일 (BANGAWER3)
+//줄바꿈 + 스크롤 버전 
 //한글 출력 성공이지만 옛날 한글로 해둠.
 //성공 : 프랑스, 베트남, 중국, 일본, 구한국어, 신한국어, 영어, 스페인어 , 포루투갈 , 독일어, 프랑스, 중국어, 러시아, 이탈리아, 네덜란드(덧치) , 스웨덴어, 터키어,  덴마크 danish, 노르웨이, 필란드어, 그리스, 헝가리 , 히브리, 루마니아
 // 우크라이나어, 아이슬란드, 불가리아, 
-//이번버전에 해결됨 : 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
-//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트, 
+//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트, 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //5 14 15 
@@ -26,7 +33,6 @@
 #include <BLE2902.h>
 
 #include "u8g2_korea_kang4.h"
-#include "u8g2_thai_kang1.h"
 
 //Bluetooth
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -156,8 +162,20 @@ void initBLEDevice()
   {
     String str =  "banGawer";
     u8g2.clearBuffer(); // 버퍼 초기화
-    u8g2.setFont(u8g2_font_lubBI08_te);
-    u8g2.drawUTF8(32, 34, str.c_str());
+    u8g2.setFont(u8g2_font_prospero_bold_nbp_tr);
+    
+    //https://github.com/olikraus/u8g2/wiki/fntlist12 글씨체 정보
+    //u8g2_font_lubBI08_te (기존)
+    //내취향 
+    //u8g2_font_prospero_bold_nbp_tf u8g2_font_Born2bSportyV2_tf
+    //후보
+    //u8g2_font_prospero_bold_nbp_tf u8g2_font_prospero_bold_nbp_tr 
+    //u8g2_font_tenthinnerguys_t_all
+    //u8g2_font_BBSesque_tf u8g2_font_BBSesque_tr u8g2_font_BBSesque_te 
+    //u8g2_font_Born2bSportySlab_tf u8g2_font_Born2bSportySlab_tr u8g2_font_Born2bSportySlab_te
+    //u8g2_font_Born2bSportyV2_tf u8g2_font_Born2bSportyV2_tr u8g2_font_Born2bSportyV2_te
+    //u8g2_font_Terminal_tr u8g2_font_Terminal_te
+    u8g2.drawUTF8(34, 36, str.c_str());
     u8g2.sendBuffer();
   }
   void connectedMent()
@@ -194,6 +212,7 @@ void loop() {
       oldDeviceConnected = deviceConnected;
 
       Serial.print("연결완료");
+      clearSerialBuffer();
   }
 
 
@@ -310,12 +329,12 @@ bool isCharValid(String charStr) {
 
 void Message(int langCode, String str)
 {
+  u8g2.clearBuffer(); // 버퍼 초기화
   ChangeUTF(langCode);
   u8g2.setFlipMode(0);
 
   u8g2PrintWithEachChar(langCode, str);
   u8g2.sendBuffer();
-  u8g2.clearBuffer(); // 버퍼 초기화
   Serial.println("");
 }
 void u8g2PrintWithEachChar(int langCode, String str)
