@@ -1,4 +1,7 @@
-/////////////////////////////////////////////////////VERSION : BANGAWER 5 /////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////VERSION : BANGAWER 6 /////////////////////////////////////////////////////////////
+
+//2월28일 (BANGAWER 6)
+//중요 : 중국어용 구두점 출력안되는 현상 수정
 
 //2월26일 (BANGAWER5)
 //중요 : 재실행시 이전 정보가 남아있는 버그 수정.
@@ -433,10 +436,10 @@ bool isAlphabet(char c) {
 // }
 
 String replaceChinesePunctuations(String str) {
+  const char* punctuations[] = {"，", "。", "！", "？", "；", "：", "、", "（", "）"};
+  const char* punctuationsForReplace[] = {", ", "。", "!", "?", ";", ":", "、", "(", ")"};
   // const char* punctuations[] = {"，", "。", "！", "？", "；", "：", "、", "（", "）"};
   // const char* punctuationsForReplace[] = {", ", "。", "!", "?", ";", ":", "、", "(", ")"};
-  const char* punctuations[] = {"，", "？"};
-  const char* punctuationsForReplace[] = {",", "?"};
 
   for (int i = 0; i < sizeof(punctuations)/sizeof(punctuations[0]); i++) {
     str.replace(punctuations[i], punctuationsForReplace[i]);
