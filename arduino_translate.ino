@@ -1,4 +1,8 @@
-/////////////////////////////////////////////////////VERSION : BANGAWER 6 /////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////VERSION : BANGAWER 7 /////////////////////////////////////////////////////////////
+
+//3월14일 (BANGAWER 7)
+//인도네시아어 데이터 잘 넘어오고 출력도 잘되는지 확인했음. 나중에 어플에서 인도네시아어 고를수있게 풀어주면됨.
+//앞으로 타이어만 하면되는상황.
 
 //2월28일 (BANGAWER 6)
 //중요 : 중국어용 구두점 출력안되는 현상 수정
@@ -676,6 +680,9 @@ void ChangeUTF(int langCodeInt)
         break;
     case 33: // Estonian
         u8g2.setFont(FONT_STANDARD); 
+        break;
+    case 41: // Indonesian
+        u8g2.setFont(FONT_EUROPE); 
         break;
     default:
         u8g2.setFont(FONT_STANDARD); 
