@@ -531,7 +531,6 @@ void ChangeUTF(int langCodeInt)
 
 
   const uint8_t *FONT_ENGLISH = u8g2_font_ncenR12_tr; 
-  const uint8_t *FONT_KOREA = u8g2_font_unifont_t_korean2; 
   const uint8_t *FONT_STANDARD = u8g2_font_unifont_t_symbols; 
   const uint8_t *FONT_EUROPE = u8g2_font_7x14_tf; 
   const uint8_t *FONT_CHINA = u8g2_font_wqy14_t_gb2312a; 
@@ -605,8 +604,8 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 12: // Korean
-        u8g2.setFont(u8g2_font_unifont_t_korean2);
-//        u8g2.setFont(u8g2_korea_kang4);
+     //   u8g2.setFont(u8g2_font_unifont_t_korean2);
+        u8g2.setFont(u8g2_korea_kang4);
         break;
     case 13: // Swedish å 
         u8g2.setFont(FONT_EUROPE); 
