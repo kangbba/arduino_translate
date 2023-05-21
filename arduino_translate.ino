@@ -170,18 +170,6 @@ void initBLEDevice()
     String str =  "banGawer";
     u8g2.clearBuffer(); // 버퍼 초기화
     u8g2.setFont(u8g2_font_prospero_bold_nbp_tr);
-    
-    //https://github.com/olikraus/u8g2/wiki/fntlist12 글씨체 정보
-    //u8g2_font_lubBI08_te (기존)
-    //내취향 
-    //u8g2_font_prospero_bold_nbp_tf u8g2_font_Born2bSportyV2_tf
-    //후보
-    //u8g2_font_prospero_bold_nbp_tf u8g2_font_prospero_bold_nbp_tr 
-    //u8g2_font_tenthinnerguys_t_all
-    //u8g2_font_BBSesque_tf u8g2_font_BBSesque_tr u8g2_font_BBSesque_te 
-    //u8g2_font_Born2bSportySlab_tf u8g2_font_Born2bSportySlab_tr u8g2_font_Born2bSportySlab_te
-    //u8g2_font_Born2bSportyV2_tf u8g2_font_Born2bSportyV2_tr u8g2_font_Born2bSportyV2_te
-    //u8g2_font_Terminal_tr u8g2_font_Terminal_te
     u8g2.drawUTF8(34, 36, str.c_str());
     u8g2.sendBuffer();
   }
