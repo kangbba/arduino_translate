@@ -485,31 +485,6 @@ int getCharWidth(char c, int langCode) {
       return 14; 
     }
   } 
-  else if (langCode == 26){
-    if (_isPunctuation){
-      return 4; 
-    }
-    else {
-      return 8; 
-    }
-  }
-  else if (langCode == 4){
-    if (_isPunctuation){
-      return 4; 
-    }
-    else {
-      return 8; 
-    }
-  }
-  else if(langCode == 20) // thai
-  {
-    if (_isPunctuation){
-      return 4; 
-    }
-    else {
-      return 8; 
-    }
-  }
   else { 
     if (_isPunctuation){
       return 4; 
