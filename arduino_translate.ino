@@ -245,17 +245,6 @@ void loop() {
     accumTimeForScroll += deltaTime;
   }
   previousMillis = currentMillis;
-
-
-    // Serial.print("langCode ");
-    // Serial.print(langCode);
-    // Serial.println();
-    // Serial.print("someMsg ");
-    // Serial.print(someMsg);
-    // Serial.println();
-    // Serial.print("someMsg : ");
-    // Serial.println(someMsg);
-   // 
   
 }
 //////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
@@ -500,23 +489,6 @@ void ChangeUTF(int langCodeInt)
   const uint8_t *FONT_JAPAN = u8g2_font_unifont_t_japanese1; 
   const uint8_t *FONT_RUSSIA = u8g2_font_cu12_t_cyrillic; 
 
-// best u8g2_font_unifont_t_cyrillic
-// u8g2_font_crox3h_tr x
-// u8g2_font_9x15_t_cyrillic o (일부생략)
-// u8g2_font_10x20_t_cyrillic
-// u8g2_font_unifont_t_cyrillic o
-// u8g2_font_fub25_tu x 
-
-//best u8g2_font_t0_13b_tf
-//후보  u8g2_font_helvR12_tr u8g2_font_helvR10_tf 뭔가 안깔끔 u8g2_font_profont12_tf u8g2_font_4x6_mr u8g2_font_t0_14b_tf 
-//europe u8g2_font_helvR14_tr u8g2_font_fub11_tf너무 굵음u8g2_font_helvR14_tf u8g2_font_ncenB14_tr
-
-//best : u8g2_font_f16_t_japanese2
-//u8g2_font_k14_t_japanese1, u8g2_font_k14_t_japanese2
-//일본어 u8g2_font_wqy15_t_gb2312 u8g2_font_wqy13_t_gb2312 u8g2_font_wqy14_t_gb2312한자짤림 
-//u8g2_font_wqy15_t_gb2312 u8g2_font_wqy16_t_gb2312양호 한자좀짤림 
-
-
   switch (langCodeInt) {
     case 1: // English
         u8g2.setFont(FONT_ENGLISH);
@@ -535,20 +507,6 @@ void ChangeUTF(int langCodeInt)
         break;
     case 6: // Arabic
         u8g2.setFont(u8g2_font_cu12_t_arabic); 
-// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_cu12_t_arabic.png
-// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_10x20_t_arabic.png
-// https://raw.githubusercontent.com/wiki/olikraus/u8g2/fntpic/u8g2_font_unifont_t_arabic.png
-// u8g2_font_amiri_14_tf
-// u8g2_font_amiri_16_tf
-// u8g2_font_caescaden_sans_16_tu
-// u8g2_font_farsi_opensans_16_t_all
-// u8g2_font_mirza_16_t_all
-// u8g2_font_noto_naskh_arabic_16_t_all
-// u8g2_font_raleway_thin_arabic_16_t_all
-// u8g2_font_tajawal_16_t_all
-// u8g2_font_trochut_arabic_16_t_all
-// u8g2_font_uthmani_16_tr // 페르시아
-// u8g2_font_iranian_sans_16_t_all //페르시아
 
         break;
     case 7: // Russian
@@ -578,16 +536,6 @@ void ChangeUTF(int langCodeInt)
         break;
     case 15: // Polish
         u8g2.setFont(u8g2_font_helvR12_te); 
-// u8g2_font_helvR12_te (Helvetica Regular 12pt)
-// u8g2_font_6x10_te (6x10 Pixel)
-// u8g2_font_6x12_te (6x12 Pixel)
-// u8g2_font_7x14B_te (7x14 Bold Pixel)
-// u8g2_font_8x13B_te (8x13 Bold Pixel)
-// u8g2_font_9x15_te (9x15 Pixel)
-// u8g2_font_9x18_te (9x18 Pixel)
-// u8g2_font_fur14_tf (Futura 14pt)
-// u8g2_font_courB14_tr (Courier Bold 14pt)
-// u8g2_font_inr16_mf (Inconsolata Regular 16pt)
         break;
     case 16: // Danish å 
         u8g2.setFont(FONT_EUROPE); 
@@ -651,91 +599,3 @@ void ChangeUTF(int langCodeInt)
         break;
   }
 }
-
-/*
-u8g2_font_wqy12_t_chinese1  411 9,491
-u8g2_font_wqy12_t_chinese2  574 13,701
-u8g2_font_wqy12_t_chinese3  993 25,038
-u8g2_font_wqy12_t_gb2312a 4041  111,359
-u8g2_font_wqy12_t_gb2312b 4531  120,375
-u8g2_font_wqy12_t_gb2312  7539  208,228
-u8g2_font_wqy13_t_chinese1  411 10,341
-u8g2_font_wqy13_t_chinese2  574 14,931
-u8g2_font_wqy13_t_chinese3  993 27,370
-u8g2_font_wqy13_t_gb2312a 4041  121,327
-u8g2_font_wqy13_t_gb2312b 4531  130,945
-u8g2_font_wqy13_t_gb2312  7539  227,383
-u8g2_font_wqy14_t_chinese1  411 11,368
-u8g2_font_wqy14_t_chinese2  574 16,443
-u8g2_font_wqy14_t_chinese3  993 30,200
-u8g2_font_wqy14_t_gb2312a 4040  133,898
-u8g2_font_wqy14_t_gb2312b 4530  143,477
-u8g2_font_wqy14_t_gb2312  7538  251,515
-u8g2_font_wqy15_t_chinese1  411 12,590
-u8g2_font_wqy15_t_chinese2  574 18,133
-u8g2_font_wqy15_t_chinese3  993 33,165
-u8g2_font_wqy15_t_gb2312a 4041  147,563
-u8g2_font_wqy15_t_gb2312b 4531  158,713
-u8g2_font_wqy15_t_gb2312  7539  276,938
-u8g2_font_wqy16_t_chinese1  411 14,229
-u8g2_font_wqy16_t_chinese2  574 20,245
-u8g2_font_wqy16_t_chinese3  993 37,454
-u8g2_font_wqy16_t_gb2312a 4041  169,286
-u8g2_font_wqy16_t_gb2312b 4531  182,271
-u8g2_font_wqy16_t_gb2312  7539  318,090
-*/
-
-/*
-u8g2_font_f16_t_japanese1:
-
-지원 글자 수: 3,338자 (JIS X 0208 + NEC + IBM Extended)
-폰트 용량: 약 65.5KB
-u8g2_font_f16_t_japanese2:
-
-지원 글자 수: 4,965자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer)
-폰트 용량: 약 98.1KB
-u8g2_font_f16_t_japanese3:
-
-지원 글자 수: 13,108자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer + JIS X 0213:2004)
-폰트 용량: 약 257.9KB
-u8g2_font_f16_t_japanese4:
-
-지원 글자 수: 24,083자 (JIS X 0208 + NEC + IBM Extended + IBM Selectric Composer + JIS X 0213:2004 + 管理画面漢字)
-폰트 용량: 약 475.2KB
-*/
-
-// CHARACTERISTIC_UUID_TX를 통해 데이터를 보내야 합니다.
-
-/*
-    Video: https://www.youtube.com/watch?v=oCMOYS71NIU
-    Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleNotify.cpp
-    Ported to Arduino ESP32 by Evandro Copercini
-
-   Create a BLE server that, once we receive a connection, will send periodic notifications.
-   The service advertises itself as: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
-   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE" 
-   Has a characteristic of: 6E400003-B5A3-F393-E0A9-E50E24DCCA9E - used to send data with  "NOTIFY"
-
-   The design of creating the BLE server is:
-   1. Create a BLE Server
-   2. Create a BLE Service
-   3. Create a BLE Characteristic on the Service
-   4. Create a BLE Descriptor on the characteristic
-   5. Start the service.
-   6. Start advertising.
-
-   In this example rxValue is the data received (only accessible inside that function).
-   And txValue is the data to be sent, in this example just a byte incremented every second. 
-*/
-
-// See the following for generating UUIDs:
-// https://www.uuidgenerator.net/
-// #define SERVICE_UUID           "2ef826d2-a48d-11ed-a8fc-0242ac120002" // UART service UUID
-// #define CHARACTERISTIC_UUID_RX "2ef82e8e-a48d-11ed-a8fc-0242ac120002"
-// #define CHARACTERISTIC_UUID_TX "2ef83078-a48d-11ed-a8fc-0242ac120002"
-/*
-  Fontname: -FontForge-DOSGothic-Medium-R-Normal—16-150-75-75-P-159-ISO10646-1
-  Copyright: Copyright (c) 2016 Damheo Lee
-  Glyphs: 95/24869
-  BBX Build Mode: 0
-*/
