@@ -1,36 +1,31 @@
-/////////////////////////////////////////////////////VERSION : BANGAWER 7 /////////////////////////////////////////////////////////////
+#define LED_PIN 19  
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <ESPAsyncWebServer.h>
+AsyncWebServer server(80);
 
-//3월14일 (BANGAWER 7)
-//인도네시아어 데이터 잘 넘어오고 출력도 잘되는지 확인했음. 나중에 어플에서 인도네시아어 고를수있게 풀어주면됨.
-//앞으로 타이어만 하면되는상황.
+#include "web_index.h"
 
-//2월28일 (BANGAWER 6)
-//중요 : 중국어용 구두점 출력안되는 현상 수정
+// const char *ssid = "KANGS_2.4G_1F";
+// const char *password = "kang3708!@";
+const char *ssid = "SK_WiFiGIGA97BE_2.4G";
+const char *password = "AWKB0@6876";
+#include "FS.h"
+#include "SPIFFS.h"
 
-//2월26일 (BANGAWER5)
-//중요 : 재실행시 이전 정보가 남아있는 버그 수정.
-//openingment banGawer 기존거 좀 올드해보여서 글씨체 바꿔보는중 (마음에 안들면 openingment() 함수안의 내용을 수정하면 됨)
-//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트
+#define RECORDING_TIME 10                           // 녹음 시간 10초
+#define RECORDING_DATA_SIZE RECORDING_TIME * 8000  // 8000 = 1초간 레코딩 데이타
 
-//2월25일 (BANGAWER4)
-//이번버전에 해결됨 : 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
-//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트
+const int headerSize = 44;
+char filename[20] = "/sound1.wav";
+int mode = 0;  // 0 : 재생 모드 , 1 : 녹음 모드
+byte header[headerSize];
+unsigned long write_data_count = 0;
+File file;
+unsigned long start_millis;
+uint8_t *buffer;
 
-//2월24일 (BANGAWER3)
-//줄바꿈 + 스크롤 버전 
-//한글 출력 성공이지만 옛날 한글로 해둠.
-//성공 : 프랑스, 베트남, 중국, 일본, 구한국어, 신한국어, 영어, 스페인어 , 포루투갈 , 독일어, 프랑스, 중국어, 러시아, 이탈리아, 네덜란드(덧치) , 스웨덴어, 터키어,  덴마크 danish, 노르웨이, 필란드어, 그리스, 헝가리 , 히브리, 루마니아
-// 우크라이나어, 아이슬란드, 불가리아, 
-//실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트, 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-//이부분은 오디오 전송을위해 새로 추가된부분
-#define LED_PIN 19  // LED가 연결된 GPIO 핀 번호
-
-//
-//5 14 15 
-//5 2 16
+void CreateWavHeader(byte *header, int waveDataSize);
 
 #include <SPI.h>
 #include <Wire.h>
@@ -50,9 +45,6 @@
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
-
-//U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
-//U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 14, /* reset=*/ 15); //scl=18, sda=23  SPI로 변경
 
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b" // UART service UUID
@@ -103,19 +95,8 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string rxValue = pCharacteristic->getValue();
       if (rxValue.length() > 0) {
-        Serial.println("********");
-        Serial.print("Received Value: ");
         for (int i = 0; i < rxValue.length(); i++)
-          Serial.print(rxValue[i]);
-
-        Serial.println();
-
-        recentMessage = rxValue.c_str(); 
-
-        Serial.print("Received Value to String : ");
-        Serial.print(recentMessage);
-        Serial.println();
-
+           recentMessage = rxValue.c_str(); 
         nowCallback++;
       }
     }
@@ -140,19 +121,48 @@ void setup() {
   
   //이부분은 새로추가된부분
   pinMode(LED_PIN, OUTPUT);  // LED_PIN을 출력으로 설정
+
+  //setupForRecording();
+
+
+  Serial.begin(115200);
+  if (!SPIFFS.begin(true))
+  {
+   // Serial.println("SPIFFS Mount Failed");
+    while (1);
+  }
+  print_file_list();
+  buffer = (uint8_t *)malloc(RECORDING_DATA_SIZE);
+  memset(buffer, 0, RECORDING_DATA_SIZE);
+
+  if (String(WiFi.SSID()) != String(ssid))
+  {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+  }
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(WiFi.localIP());
+
+  server.on("/", HTTP_GET, get_html);
+  server.on("/sound1.wav", HTTP_GET, capture_handler1);
+  server.on("/sound2.wav", HTTP_GET, capture_handler2);
+  server.on("/sound3.wav", HTTP_GET, capture_handler3);
+  server.on("/record1", HTTP_GET, record_handler1);
+  server.on("/record2", HTTP_GET, record_handler2);
+  server.on("/record3", HTTP_GET, record_handler3);
+  server.begin();
 }
 
 void initBLEDevice()
 {
-  // Create the BLE Device
   BLEDevice::init("banGawer");
-  // Create the BLE Server
   pServer = BLEDevice::createServer();
- // pServer->setMtu(256);
   pServer->setCallbacks(new MyServerCallbacks());
-  // Create the BLE Service
   BLEService *pService = pServer->createService(SERVICE_UUID);
-  // Create a BLE Characteristic
   pTxCharacteristic = pService->createCharacteristic(
                     CHARACTERISTIC_UUID_TX,
                     BLECharacteristic::PROPERTY_NOTIFY
@@ -163,10 +173,8 @@ void initBLEDevice()
                       BLECharacteristic::PROPERTY_WRITE
                     );
   pRxCharacteristic->setCallbacks(new MyCallbacks());
-  // Start the service
   pService->start();
 
-  // Start advertising
   pServer->getAdvertising()->start();
   Serial.println("Waiting a client connection to notify...");
 }
@@ -262,6 +270,50 @@ void loop() {
   }
   previousMillis = currentMillis;
   
+
+  
+  if (mode == 0)
+  {
+    if (Serial.available())
+    {
+      int val = Serial.read();
+      if (val == '1')
+      {
+        Serial.println("WRITING START");
+        mode = 1;
+        write_data_count = 0;
+        strcpy(filename, "/sound1.wav");
+        start_millis = millis();
+      }
+      if (val == '2')
+      {
+        Serial.println("WRITING START");
+        mode = 1;
+        write_data_count = 0;
+        strcpy(filename, "/sound2.wav");
+        start_millis = millis();
+      }
+      if (val == '3')
+      {
+        Serial.println("WRITING START");
+        mode = 1;
+        write_data_count = 0;
+        strcpy(filename, "/sound3.wav");
+        start_millis = millis();
+      }
+      if (val == 'x')
+      {
+        Serial.println("FORMAT START");
+        SPIFFS.format();
+        Serial.println("FORMAT COMPLETED");
+      }
+    }
+  }
+  if (mode == 1)
+  {
+    record_process();
+    delayMicroseconds(30);
+  }
 }
 //////////////////////////////////////////////////////////////////////////////////////////LOOP////////////////////////////////////////////////////////////////////////////////////////
 void clearSerialBuffer() {
@@ -282,7 +334,6 @@ void scrollWithInterval(long interval)
       currentCursorY ++;
     }
     else {
-      // reset scrollStartTime to currentMillis so the next scroll interval starts from now
       scrollStartTime = currentMillis;
     }
   }
@@ -294,15 +345,6 @@ void parseLangCodeAndMessage(String input, int &langCode, String &someMsg) {
   langCode = input.substring(0, separatorIndex).toInt();
   someMsg = input.substring(separatorIndex + 1, input.indexOf(";"));
 }
-
-// void Message(int langCode, String str, bool useScroll)
-// {
-//   u8g2.setCursor(8,8);
-//   u8g2.setFont(u8g2_font_unifont_t_korean2);
-//   u8g2.print("안녕하세요");
-// }
-
-
 bool isCharValid(String charStr) {
     for (int i = 0; i < charStr.length(); i++) {
         if (charStr[i] < 0x80) { // ASCII 문자인 경우
@@ -317,8 +359,6 @@ bool isCharValid(String charStr) {
             (charStr[i] >= 0xFC && charStr[i] <= 0xFD)) {
             continue;
         }
-        Serial.print("유효하지않은 char 발견 ");
-        Serial.println(charStr);
         return false;
     }
     return true;
@@ -349,19 +389,9 @@ void u8g2PrintWithEachChar(int langCode, String str)
   for (int i = 0; i < str.length();) {
     int charSize = getCharSize(str[i]); // 다음 문자의 크기 계산
     String currentCharStr = str.substring(i, i+charSize); // 다음 문자 추출
-    Serial.print(currentCharStr);
-    //  if (!isCharValid(currentCharStr)) { // 문자가 유효하지 않은 경우 스킵
-    //     i += charSize; // 다음 문자로 이동
-    //     continue;
-    // }
     char currentChar = currentCharStr.charAt(0);
     int charWidth = getCharWidth(currentChar, langCode);
-   // int charWidth = charSize;
-    // 이번 문자 출력
     if (x + charWidth >  108) {
-        // if (isNumber(currentChar) || isPunctuation(currentChar)) {
-        //     continue;  // skip space and punctuation characters
-        // }
         x = padding;
         y += gapWithTextLines;
         u8g2.setCursor(x, y - currentCursorY);
@@ -422,15 +452,6 @@ bool isAlphabet(char c) {
     return ((c >= 65 && c <= 90) || (c >= 97 && c <= 122));
 }
 
-// // 입력된 문자가 중국어 문자인지 여부를 반환하는 함수
-// bool isChinese(char c) {
-//     return (c >= -24389 && c <= -20167); // 중국어 문자의 유니코드 범위
-// }
-
-// // 입력된 문자가 한글 문자인지 여부를 반환하는 함수
-// bool isKorean(char c) {
-//     return ((c >= -52268 && c <= -49324) || (c >= -8400 && c <= -8179)); // 한글 문자의 유니코드 범위
-// }
 
 String replaceChinesePunctuations(String str) {
   const char* punctuations[] = {"，", "。", "！", "？", "；", "：", "、", "（", "）"};
@@ -495,13 +516,10 @@ void ChangeUTF(int langCodeInt)
   int CHARCOUNT_CHINA = 27;
   int CHARCOUNT_EUROPE = 17;
   int CHARCOUNT_RUSSIA = 27;
-
-
-
   const uint8_t *FONT_ENGLISH = u8g2_font_ncenR12_tr; 
   const uint8_t *FONT_STANDARD = u8g2_font_unifont_t_symbols; 
   const uint8_t *FONT_EUROPE = u8g2_font_7x14_tf; 
-  const uint8_t *FONT_CHINA = u8g2_font_wqy14_t_gb2312a; 
+  //const uint8_t *FONT_CHINA = u8g2_font_wqy14_t_gb2312a; 
   const uint8_t *FONT_JAPAN = u8g2_font_unifont_t_japanese1; 
   const uint8_t *FONT_RUSSIA = u8g2_font_cu12_t_cyrillic; 
 
@@ -519,17 +537,13 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_EUROPE); 
         break;
     case 5: // Chinese
-         u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
+     //    u8g2.setFont(FONT_CHINA); //중국어 4040자 133,898바이트
         break;
     case 6: // Arabic
         u8g2.setFont(u8g2_font_cu12_t_arabic); 
-
         break;
     case 7: // Russian
         u8g2.setFont(FONT_RUSSIA); 
-        break;
-    case 8: // Portuguese
-        u8g2.setFont(FONT_STANDARD); 
         break;
     case 9: // Italian
         u8g2.setFont(FONT_EUROPE); 
@@ -604,9 +618,6 @@ void ChangeUTF(int langCodeInt)
     case 32: // Croatian
         u8g2.setFont(u8g2_font_helvR12_te); 
         break;
-    case 33: // Estonian
-        u8g2.setFont(FONT_STANDARD); 
-        break;
     case 41: // Indonesian
         u8g2.setFont(FONT_EUROPE); 
         break;
@@ -614,4 +625,204 @@ void ChangeUTF(int langCodeInt)
         u8g2.setFont(FONT_STANDARD); 
         break;
   }
+}
+
+
+void record_process()
+{
+uint16_t val = analogRead(36);
+    val = val >> 4;
+    buffer[write_data_count] = val;
+    write_data_count++;
+    if (write_data_count >= RECORDING_DATA_SIZE)
+    {
+      Serial.println(F("RECORDING COMPLETED"));
+      Serial.println(millis() - start_millis);
+      SPIFFS.remove(filename);
+      delay(100);
+      file = SPIFFS.open(filename, "w");
+      if (file == 0)
+      {
+        Serial.println("FILE WRITE FAILED");
+      }
+      CreateWavHeader(header, RECORDING_DATA_SIZE);
+      Serial.println(headerSize);
+      int sum_size = 0;
+      while (sum_size < headerSize)
+      {
+        sum_size = sum_size + file.write(header + sum_size, headerSize - sum_size);
+      }
+      Serial.println(RECORDING_DATA_SIZE);
+      sum_size = 0;
+      while (sum_size < RECORDING_DATA_SIZE)
+      {
+        sum_size = sum_size + file.write(buffer + sum_size, RECORDING_DATA_SIZE - sum_size);
+      }
+      file.flush();
+      file.close();
+      mode = 0;
+      Serial.println("SAVING COMPLETED");
+      print_file_list();
+    }
+}
+
+//format bytes
+String formatBytes(size_t bytes)
+{
+  if (bytes < 1024)
+  {
+    return String(bytes) + "B";
+  }
+  else if (bytes < (1024 * 1024))
+  {
+    return String(bytes / 1024.0) + "KB";
+  }
+  else if (bytes < (1024 * 1024 * 1024))
+  {
+    return String(bytes / 1024.0 / 1024.0) + "MB";
+  }
+  else
+  {
+    return String(bytes / 1024.0 / 1024.0 / 1024.0) + "GB";
+  }
+}
+void print_file_list()
+{
+  {
+    File root = SPIFFS.open("/");
+    File file = root.openNextFile();
+    while (file)
+    {
+      String fileName = file.name();
+      size_t fileSize = file.size();
+      file = root.openNextFile();
+    }
+    file.close();
+  }
+}
+
+bool exists(String path)
+{
+  bool yes = false;
+  File file = SPIFFS.open(path, "r");
+  if (!file.isDirectory())
+  {
+    yes = true;
+  }
+  file.close();
+  return yes;
+}
+
+void CreateWavHeader(byte *header, int waveDataSize)
+{
+  header[0] = 'R';
+  header[1] = 'I';
+  header[2] = 'F';
+  header[3] = 'F';
+  unsigned int fileSizeMinus8 = waveDataSize + 44 - 8;
+  header[4] = (byte)(fileSizeMinus8 & 0xFF);
+  header[5] = (byte)((fileSizeMinus8 >> 8) & 0xFF);
+  header[6] = (byte)((fileSizeMinus8 >> 16) & 0xFF);
+  header[7] = (byte)((fileSizeMinus8 >> 24) & 0xFF);
+  header[8] = 'W';
+  header[9] = 'A';
+  header[10] = 'V';
+  header[11] = 'E';
+  header[12] = 'f';
+  header[13] = 'm';
+  header[14] = 't';
+  header[15] = ' ';
+  header[16] = 0x10;  // linear PCM
+  header[17] = 0x00;
+  header[18] = 0x00;
+  header[19] = 0x00;
+  header[20] = 0x01;  // linear PCM
+  header[21] = 0x00;
+  header[22] = 0x01;  // monoral
+  header[23] = 0x00;
+  header[24] = 0x40;  // sampling rate 8000
+  header[25] = 0x1F;
+  header[26] = 0x00;
+  header[27] = 0x00;
+  header[28] = 0x40;  // Byte/sec = 8000x1x1 = 16000
+  header[29] = 0x1F;
+  header[30] = 0x00;
+  header[31] = 0x00;
+  header[32] = 0x01;  // 8bit monoral
+  header[33] = 0x00;
+  header[34] = 0x08;  // 8bit
+  header[35] = 0x00;
+  header[36] = 'd';
+  header[37] = 'a';
+  header[38] = 't';
+  header[39] = 'a';
+  header[40] = (byte)(waveDataSize & 0xFF);
+  header[41] = (byte)((waveDataSize >> 8) & 0xFF);
+  header[42] = (byte)((waveDataSize >> 16) & 0xFF);
+  header[43] = (byte)((waveDataSize >> 24) & 0xFF);
+}
+
+static void get_html(AsyncWebServerRequest *request)
+{
+  request->send_P(200, "text/html", index_html);
+}
+
+static bool capture_handler1(AsyncWebServerRequest *request)
+{
+  AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/sound1.wav", "audio/wav");
+  request->send(response);
+  return true;
+}
+
+static bool capture_handler2(AsyncWebServerRequest *request)
+{
+  AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/sound2.wav", "audio/wav");
+  request->send(response);
+  return true;
+}
+
+static bool capture_handler3(AsyncWebServerRequest *request)
+{
+  AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/sound3.wav", "audio/wav");
+  request->send(response);
+  return true;
+}
+
+static bool record_handler1(AsyncWebServerRequest *request)
+{
+  Serial.println("RECORD 1");
+  AsyncWebServerResponse *response = request->beginResponse(200);
+  request->send(response);
+  Serial.println("WRITING START");
+  mode = 1;
+  write_data_count = 0;
+  strcpy(filename, "/sound1.wav");
+  start_millis = millis();
+  return true;
+}
+
+static bool record_handler2(AsyncWebServerRequest *request)
+{
+  Serial.println("RECORD 2");
+  AsyncWebServerResponse *response = request->beginResponse(200);
+  request->send(response);
+  Serial.println("WRITING START");
+  mode = 1;
+  write_data_count = 0;
+  strcpy(filename, "/sound2.wav");
+  start_millis = millis();
+  return true;
+}
+
+static bool record_handler3(AsyncWebServerRequest *request)
+{
+  Serial.println("RECORD 3");
+  AsyncWebServerResponse *response = request->beginResponse(200);
+  request->send(response);
+  Serial.println("WRITING START");
+  mode = 1;
+  write_data_count = 0;
+  strcpy(filename, "/sound3.wav");
+  start_millis = millis();
+  return true;
 }
