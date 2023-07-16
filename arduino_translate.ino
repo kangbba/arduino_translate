@@ -24,10 +24,14 @@
 //실패 : 태국어 몇글자 폰트, 아랍어 몇글자 폰트, 폴란드어, 체코어, 리투아니안어(s위에 ^) , 라트비안 (c위에 ^) , 슬로베니아(c위에 ^), 크로아티아 (c위에 ^)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//이부분은 오디오 전송을위해 새로 추가된부분
+#define LED_PIN 19  // LED가 연결된 GPIO 핀 번호
+
+//
 //5 14 15 
 //5 2 16
 
-#include "BluetoothSerial.h"
 #include <SPI.h>
 #include <Wire.h>
 //U8G2
@@ -132,6 +136,10 @@ void setup() {
   clearSerialBuffer();
 
   openingMent();
+
+  
+  //이부분은 새로추가된부분
+  pinMode(LED_PIN, OUTPUT);  // LED_PIN을 출력으로 설정
 }
 
 void initBLEDevice()
@@ -238,6 +246,14 @@ void loop() {
   else 
   {
     Serial.println("Invalid input format. It should be in the format 'langcode:someMsg;'");
+
+    if(recentMessage == "signal"){  
+
+      digitalWrite(LED_PIN, HIGH);   // LED를 켭니다.
+      delay(1000);                   // 1초 동안 대기합니다.
+      digitalWrite(LED_PIN, LOW);    // LED를 끕니다.
+      delay(1000);
+    }
   }
   if (accumTimeForScroll >= scrollStartDelayTime)
      scrollWithInterval(scrollDelay);
